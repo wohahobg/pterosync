@@ -1,0 +1,8 @@
+{
+  "swap_as_gb_comment": "Mode to specify swap amounts as GB instead of MB",
+  "swap_as_gb": false,
+  "disk_as_gb_comment": "Mode to specify disk amounts as GB instead of MB",
+  "disk_as_gb": true,
+  "memory_as_gb_comment": "Mode to specify memory amounts as GB instead of MB",
+  "memory_as_gb": true
+}
