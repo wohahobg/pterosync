@@ -1,2 +1,1 @@
-# pterosync
-PteroSync new WHMCS Pterodactyl Module
+The whole project will be shared very soon as open source!
