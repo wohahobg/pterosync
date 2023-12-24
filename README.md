@@ -1,6 +1,6 @@
 # PteroSync
 
-PteroSync is a leader in providing innovative solutions for server deployment and management. It simplifies and streamlines complex server processes, enabling efficient operations. With cutting-edge technology, PteroSync empowers businesses, focusing on growth while handling server allocation and deployment. It offers reliable and scalable solutions, designed to meet diverse needs&#8203;``【oaicite:2】``&#8203;.
+PteroSync is a leader in providing innovative solutions for server deployment and management. It simplifies and streamlines complex server processes, enabling efficient operations. With cutting-edge technology, PteroSync empowers businesses, focusing on growth while handling server allocation and deployment. It offers reliable and scalable solutions, designed to meet diverse needs.
 
 ## Features
 - Automated Port Allocation
