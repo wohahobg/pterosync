@@ -1,8 +1,21 @@
+# PteroSync
+
+PteroSync is a leader in providing innovative solutions for server deployment and management. It simplifies and streamlines complex server processes, enabling efficient operations. With cutting-edge technology, PteroSync empowers businesses, focusing on growth while handling server allocation and deployment. It offers reliable and scalable solutions, designed to meet diverse needs&#8203;``【oaicite:2】``&#8203;.
+
+## Features
+- Automated Port Allocation
+- Intelligent User Management
+- Custom Server Environment Setup
+- Dynamic Server Configuration
+- Advanced Server Deployment
+
+PteroSync leverages automation for server provisioning and management, simplifying complex processes for effortless server setups and configurations directly from WHMCS. It features dynamic resource allocation and a user-centric design, offering a seamless experience with user-friendly interfaces and powerful backend capabilities.
+
 # Module Installation Guide
 
 Follow these steps to install and configure the WHMCS module.
 
-[Download from our GitHub page](https://github.com/wohahobg/PteroSync/releases/tag/1.0.0)
+[Download the latest version from our GitHub releases page](https://github.com/wohahobg/PteroSync/releases)
 
 ## Step 1: Download and Unzip
 Download the module zip file from the provided link and unzip it. You will find a folder named `pterosync`.
@@ -25,12 +38,11 @@ Create a WHMCS server for PteroSync:
 8. For SSL, check the **Secure** checkbox if applicable.
 9. Click **Save Changes**.
 
-Ensure the API keys are correctly set as shown above.
-
 ## Step 5: Activate and Test
 Activate the module in your WHMCS admin panel. Navigate to 'Setup' -> 'Products/Services' -> 'Servers', add a new server, and select your module. Test to ensure it's working correctly.
 
 ## Step 6: Read our documentation
 For more detailed information and troubleshooting tips, please refer to our comprehensive documentation.
 
-[Read Documentation](#) <!-- Replace '#' with the actual URL to your documentation -->
+
+[Read Documentation](https://github.com/wohahobg/PteroSync/wiki)
