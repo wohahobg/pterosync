@@ -37,12 +37,12 @@ Create a WHMCS server for PteroSync:
 7. If you're enabling the feature to allow customers to reboot their servers from WHMCS, create an Account API key using a Pterodactyl Admin account and enter it in the **Access Hash** field.
 8. For SSL, check the **Secure** checkbox if applicable.
 9. Click **Save Changes**.
+10. Pterodactyl API Permission: ![PermissionImage](https://cdn.gamecms.org/platform/app_api_permission.png)
+11. WHMCS Example SETUP: ![WHMCS Setup]([https://cdn.gamecms.org/platform/app_api_permission.png](https://cdn.gamecms.org/platform/connection.webp))
 
 ## Step 5: Activate and Test
 Activate the module in your WHMCS admin panel. Navigate to 'Setup' -> 'Products/Services' -> 'Servers', add a new server, and select your module. Test to ensure it's working correctly.
 
 ## Step 6: Read our documentation
-For more detailed information and troubleshooting tips, please refer to our comprehensive documentation.
-
-
+For more detailed information and troubleshooting tips, please refer to our comprehensive documentation:
 [Read Documentation](https://github.com/wohahobg/PteroSync/wiki)
