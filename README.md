@@ -38,7 +38,7 @@ Create a WHMCS server for PteroSync:
 8. For SSL, check the **Secure** checkbox if applicable.
 9. Click **Save Changes**.
 10. Pterodactyl API Permission: ![PermissionImage](https://cdn.gamecms.org/platform/app_api_permission.png)
-11. WHMCS Example SETUP: ![WHMCS Setup]([https://cdn.gamecms.org/platform/app_api_permission.png](https://cdn.gamecms.org/platform/connection.webp))
+11. WHMCS Example SETUP: ![WHMCS Setup](https://cdn.gamecms.org/platform/whmcs-connection.png)
 
 ## Step 5: Activate and Test
 Activate the module in your WHMCS admin panel. Navigate to 'Setup' -> 'Products/Services' -> 'Servers', add a new server, and select your module. Test to ensure it's working correctly.
