@@ -46,3 +46,7 @@ Activate the module in your WHMCS admin panel. Navigate to 'Setup' -> 'Products/
 ## Step 6: Read our documentation
 For more detailed information and troubleshooting tips, please refer to our comprehensive documentation:
 [Read Documentation](https://github.com/wohahobg/PteroSync/wiki)
+
+### Discord Server
+If you need help, query or question please join our Discord Server [GameCMS.ORG](https://gamecms.org/discord).
+
