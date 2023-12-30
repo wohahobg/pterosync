@@ -881,8 +881,7 @@ function pterosync_ClientArea(array $params)
                 'startServer' => 'pteroSyncStartServer',
                 'restartServer' => 'pteroSyncRestartServer',
                 'stopServer' => 'pteroSyncStopServer',
-                'getState' => 'pteroSyncServerState',
-                'getFtpDetails' => 'pteroSyncServerState',
+                'getState', 'getFtpDetails' => 'pteroSyncServerState',
                 default => false,
             };
             if ($action !== false) {
