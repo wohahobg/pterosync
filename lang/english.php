@@ -20,8 +20,10 @@
  */
 
 $keys = [
-    'SERVER_NOT_FOUND' => "This server does not exist. Please contact us if you belive that's mistake.",
-    "quickactionspanel" => 'TEST'
+    'GOTO_PANEL' => "GO TO CONTROL PANEL",
+    'QUICK_ACTIONS_PANEL' => "QUICK ACTIONS",
+    'SERVER_START_PANEL' => "START SERVER",
+    'SERVER_RESTART_PANEL' => "RESTART SERVER",
+    'SERVER_STOP_PANEL' => "STOP SERVER",
+    'SERVER_NOT_FOUND' => "This server does not exist. Please contact us if you believe that's a mistake."
 ];
-
-$LANG['ModuleVersion'] = 'hi';

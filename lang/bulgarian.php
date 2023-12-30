@@ -20,6 +20,10 @@
  */
 
 $keys = [
-    'SERVER_NOT_FOUND' => 'hi',
-    "quickactionspanel1" => 'TEST'
+    'GOTO_PANEL' => "ОТИДЕТЕ В КОНТРОЛНИЯ ПАНЕЛ",
+    'QUICK_ACTIONS_PANEL' => "БЪРЗИ ДЕЙСТВИЯ",
+    'SERVER_START_PANEL' => "СТАРТИРАНЕ НА СЪРВЪРА",
+    'SERVER_RESTART_PANEL' => "РЕСТАРТИРАНЕ НА СЪРВЪРА",
+    'SERVER_STOP_PANEL' => "СПИРАНЕ НА СЪРВЪРА",
+    'SERVER_NOT_FOUND' => "Този сървър не съществува. Моля, свържете се с нас, ако смятате, че това е грешка."
 ];
