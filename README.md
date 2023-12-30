@@ -1,52 +1,86 @@
 # PteroSync
 
-PteroSync is a leader in providing innovative solutions for server deployment and management. It simplifies and streamlines complex server processes, enabling efficient operations. With cutting-edge technology, PteroSync empowers businesses, focusing on growth while handling server allocation and deployment. It offers reliable and scalable solutions, designed to meet diverse needs.
+PteroSync is a trailblazer in server deployment and management, offering advanced solutions that make complex server processes simpler and more efficient. Our technology empowers businesses to focus on growth by efficiently handling server allocation and deployment. Designed to meet a wide range of business needs, our scalable and reliable solutions are at the forefront of server management technology.
 
-## Features
-- Automated Port Allocation
-- Intelligent User Management
-- Custom Server Environment Setup
-- Dynamic Server Configuration
-- Advanced Server Deployment
+This module is an enhanced version of the original [Pterodactyl WHMCS module](https://github.com/pterodactyl/whmcs). It builds on the solid foundation of Pterodactyl, known for its robust and user-friendly server management capabilities, by adding additional features and improvements to further refine server management tasks. Among these enhancements is the support for multiple port allocations, catering to games and applications that require complex networking setups.
 
-PteroSync leverages automation for server provisioning and management, simplifying complex processes for effortless server setups and configurations directly from WHMCS. It features dynamic resource allocation and a user-centric design, offering a seamless experience with user-friendly interfaces and powerful backend capabilities.
+## Enhanced Features
+
+- **Automated Port Allocation**: Simplifies server setup by automatically assigning ports, minimizing manual configuration.
+
+- **Intelligent User Management**: Efficiently handles user accounts and permissions, ensuring streamlined operations and robust security.
+
+- **Custom Server Environment Setup**: Provides the ability to tailor server environments to specific needs.
+
+- **Dynamic Server Configuration**: Dynamically adjusts server settings to optimize performance and resource management.
+
+- **Advanced Server Deployment**: Utilizes state-of-the-art techniques for fast and effective server deployment.
+
+- **Port Offset Support**: Offers enhanced port configuration options, ideal for applications requiring a query port that is offset from the main server port. This feature improves network setup flexibility and connectivity.
+
+- **Multiple Port Allocation**: Facilitates the allocation of multiple ports for complex networking requirements, a significant feature for games and applications with specific port needs. For more details, see our [FAQ section](#FAQ).
+
+- **Default Variables Support**: Enables pre-setting common variables for faster and more consistent server setups.
+
+Leverage the PteroSync module to upgrade your server management experience, utilizing the latest innovations for the ever-evolving demands of today's business environment.
 
 # Module Installation Guide
 
-Follow these steps to install and configure the WHMCS module.
+Follow these steps to install and configure the PteroSync module.
 
 [Download the latest version from our GitHub releases page](https://github.com/wohahobg/PteroSync/releases)
 
 ## Step 1: Download and Unzip
-Download the module zip file from the provided link and unzip it. You will find a folder named `pterosync`.
+Download the module zip file and unzip it to find the `pterosync` folder.
 
 ## Step 2: Upload to WHMCS
-Upload the module folder to your WHMCS installation at `/path/to/whmcs/modules/servers/`.
+Upload the `pterosync` folder to your WHMCS installation at `/path/to/whmcs/modules/servers/`.
 
 ## Step 3: Configure config.json
-Configure the `config.json` file in the module folder according to your requirements.
+Adjust the `config.json` in the module folder as needed.
 
 ## Step 4: Server Configuration in WHMCS
-Create a WHMCS server for PteroSync:
-1. Navigate to **Setup** -> **Products/Services** -> **Servers** and create a new server.
-2. For **Hostname**, enter the URL of your Pterodactyl panel (e.g., panel.qgs.bg).
-3. At the bottom, under **Server Details**, select **PteroSync** as the module.
-4. The **Username** field can be left blank.
-5. In a separate window, log in to your Pterodactyl panel and create an Application API key with the required permissions.
-6. Enter this key in the **Password** field in the WHMCS server configuration.
-7. If you're enabling the feature to allow customers to reboot their servers from WHMCS, create an Account API key using a Pterodactyl Admin account and enter it in the **Access Hash** field.
-8. For SSL, check the **Secure** checkbox if applicable.
-9. Click **Save Changes**.
-10. Pterodactyl API Permission: ![PermissionImage](https://cdn.gamecms.org/platform/app_api_permission.png)
-11. WHMCS Example SETUP: ![WHMCS Setup](https://cdn.gamecms.org/platform/whmcs-connection.png)
+Set up a WHMCS server for PteroSync:
+1. Go to **Setup** -> **Products/Services** -> **Servers** and create a new server.
+2. Enter your Pterodactyl panel URL as the **Hostname**.
+3. Select **PteroSync** as the module under **Server Details**.
+4. Leave the **Username** field blank.
+5. In Pterodactyl, create an Application API key with necessary permissions and put it in the **Password** field of WHMCS.
+6. If you enable customer server reboot from WHMCS, create an Account API key using a Pterodactyl Admin account and put it in the **Access Hash** field.
+7. Check the **Secure** checkbox for SSL if applicable.
+8. Click **Save Changes**.
+9. Pterodactyl API Permission: ![PermissionImage](https://cdn.gamecms.org/platform/app_api_permission.png)
+10. WHMCS Example SETUP: ![WHMCS Setup](https://cdn.gamecms.org/platform/whmcs-connection.png)
 
 ## Step 5: Activate and Test
-Activate the module in your WHMCS admin panel. Navigate to 'Setup' -> 'Products/Services' -> 'Servers', add a new server, and select your module. Test to ensure it's working correctly.
+Activate the module in WHMCS and test for proper functionality.
 
 ## Step 6: Read our documentation
-For more detailed information and troubleshooting tips, please refer to our comprehensive documentation:
+For detailed information and troubleshooting, refer to our documentation:
 [Read Documentation](https://github.com/wohahobg/PteroSync/wiki)
 
-### Discord Server
-If you need help, query or question please join our Discord Server [GameCMS.ORG](https://gamecms.org/discord).
 
+# FAQ
+
+## My Game Requires Multiple Ports Allocated
+
+Our module supports games or applications that require multiple ports. We've implemented a comprehensive solution to facilitate the allocation of multiple ports as needed. For detailed guidance on setting this up, please refer to the following sections of our documentation:
+
+- **Ports Ranges**: Understand how to define and allocate ranges of ports for your game or application. [Ports Ranges Documentation](https://github.com/wohahobg/PteroSync/wiki/Ports-Ranges)
+
+- **Server Port Offset**: Learn about setting up port offsets, which is crucial for games or applications that require a query port based on the server's main port number. [Server Port Offset Documentation](https://github.com/wohahobg/PteroSync/wiki/Server-Port-Offset)
+
+- **Examples**: See practical examples of how to configure and use these features. [Examples Documentation](https://github.com/wohahobg/PteroSync/wiki/Examples)
+
+
+## Overwriting Values Through Configurable Options
+Values can be overwritten using either Configurable Options or Custom Fields.
+
+The name should exactly match what you want to overwrite. For example, `dedicated_ip` will overwrite the `dedicated_ip` value based on its selection. Valid options include `server_name`, `memory`, `swap`, `io`, `cpu`, `disk`, `nest_id`, `egg_id`, `pack_id`, `location_id`, `dedicated_ip`, `port_range`, `image`, `startup`, `databases`, `allocations`, `backups`, `oom_disabled`, `username`.
+
+This approach also applies to any environment variable name. For instance, `Player Slots` will overwrite the environment variable named "Player Slots" to its value.
+
+Useful trick: You can use the | seperator to change the display name of the variable like this: dedicated_ip|Dedicated IP => Will be displayed as "Dedicated IP" but will work correctly.
+
+### Discord Server
+Join our Discord Server [GameCMS.ORG](https://gamecms.org/discord) for support and queries.
