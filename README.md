@@ -4,6 +4,12 @@ PteroSync is a trailblazer in server deployment and management, offering advance
 
 This module is an enhanced version of the original [Pterodactyl WHMCS module](https://github.com/pterodactyl/whmcs). It builds on the solid foundation of Pterodactyl, known for its robust and user-friendly server management capabilities, by adding additional features and improvements to further refine server management tasks. Among these enhancements is the support for multiple port allocations, catering to games and applications that require complex networking setups.
 
+## Technical Requirements
+
+- **PHP Version**: PHP 8.0 or higher.
+- **WHMCS Compatibility**: Works with versions of WHMCS that support PHP 8.0 or higher.
+
+
 ## Enhanced Features
 
 - **Automated Port Allocation**: Simplifies server setup by automatically assigning ports, minimizing manual configuration.
