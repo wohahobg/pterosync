@@ -88,5 +88,8 @@ This approach also applies to any environment variable name. For instance, `Play
 
 Useful trick: You can use the | seperator to change the display name of the variable like this: dedicated_ip|Dedicated IP => Will be displayed as "Dedicated IP" but will work correctly.
 
+## Couldn't find any nodes satisfying the request
+This can be caused from any of the following: Wrong location, not enough disk space/CPU/RAM, or no allocations matching the provided criteria.
+
 ### Discord Server
 Join our Discord Server [GameCMS.ORG](https://gamecms.org/discord) for support and queries.
