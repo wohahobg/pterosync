@@ -27,15 +27,13 @@ function pterosync_MetaData()
 {
     return [
         "DisplayName" => "Ptero Sync",
-        "APIVersion" => "1.1",
+        "APIVersion" => "1.2",
         "RequiresServer" => true,
     ];
 }
 
 function pterosync_loadLocations($params): array
 {
-    if (pterosyncCheckPHPSelf()) return [];
-
     $data = pteroSyncApplicationApi($params, 'locations');
     $list = [];
     if ($data['status_code'] == 200) {
@@ -50,7 +48,6 @@ function pterosync_loadLocations($params): array
 
 function pterosync_loadEggs($params)
 {
-    if (pterosyncCheckPHPSelf()) return [];
     $eggs = [];
     if (isset($_SESSION['nets'])) {
         $nests = $_SESSION['nets'];
@@ -86,10 +83,10 @@ function pterosync_loadNets($params)
 function pterosyncAddHelpTooltip($message, $link = '#')
 {
     if ($link != '#') {
-        $link = 'https://pterosync.com/documentation#' . $link;
+        $link = 'https://github.com/wohahobg/PteroSync/wiki';
     }
     if ($link == 'port') {
-        $link = 'https://pterosync.com/documentation/#v-ports-ranges';
+        $link = 'https://github.com/wohahobg/PteroSync/wiki/Ports-Ranges';
     }
     // Use htmlspecialchars to encode special characters
     $encodedMessage = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
@@ -153,7 +150,7 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "<style></style> CPU Limit (%)",
             "Description" => pterosyncAddHelpTooltip('Amount of CPU to assign to the created server.', 'cpu'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             "Default" => 100,
             'SimpleMode' => true,
         ],
@@ -161,7 +158,7 @@ function pterosync_ConfigOptions()
             "FriendlyName" => $diskTitle,
             "Description" => pterosyncAddHelpTooltip($diskDescription, 'dick'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             "Default" => $diskDefault,
             'SimpleMode' => true,
         ],
@@ -169,7 +166,7 @@ function pterosync_ConfigOptions()
             "FriendlyName" => $memoryTitle,
             "Description" => pterosyncAddHelpTooltip($memoryDescription, 'memory'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             "Default" => $memoryDefault,
             'SimpleMode' => true,
         ],
@@ -178,14 +175,14 @@ function pterosync_ConfigOptions()
             "Description" => pterosyncAddHelpTooltip($swapDescription, 'swap'),
             "Type" => "text",
             "Default" => $swapDefault,
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "location_id" => [
             "FriendlyName" => "Location ID",
             "Description" => pterosyncAddHelpTooltip("Select the location where the server will be deployed. Each location ID corresponds to a specific geographical data center.", 'location-id'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
             'Loader' => 'pterosync_loadLocations',
         ],
@@ -193,14 +190,14 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "Dedicated IP",
             "Description" => pterosyncAddHelpTooltip("Assign dedicated ip to the server (optional)", 'dedicated-ip'),
             "Type" => "yesno",
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "nest_id" => [
             "FriendlyName" => "<span id='cNestId'></span> Nest ID",
             "Description" => pterosyncAddHelpTooltip("Choose a Nest ID that categorizes the type of server you wish to deploy. Nests are used to group similar servers.", 'nest-id'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
             'Loader' => 'pterosync_loadNets',
         ],
@@ -208,7 +205,7 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "Block IO Weight",
             "Description" => pterosyncAddHelpTooltip("Block IO Adjustment number (10-1000)", 'io'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             "Default" => "500",
             'SimpleMode' => true,
         ],
@@ -216,7 +213,7 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "<span id='cEggId'></span> Egg ID",
             "Description" => pterosyncAddHelpTooltip("Select the Egg ID to specify the software environment and settings for your server. Eggs define the application running on the server.", 'egg-id'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 10,
             'SimpleMode' => true,
             'Loader' => 'pterosync_loadEggs',
         ],
@@ -224,21 +221,21 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "Startup",
             "Description" => pterosyncAddHelpTooltip("Custom startup command to assign to the created server (optional)", 'startup'),
             "Type" => "text",
-            "Size" => 30,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "image" => [
             "FriendlyName" => "Image",
             "Description" => pterosyncAddHelpTooltip("Custom Docker image to assign to the created server (optional)", 'image'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "databases" => [
             "FriendlyName" => "Databases",
             "Description" => pterosyncAddHelpTooltip("Client will be able to create this amount of databases for their server (optional)", 'databases'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             "Default" => 1,
             'SimpleMode' => true,
         ],
@@ -246,7 +243,7 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "Server Name",
             "Description" => pterosyncAddHelpTooltip("The name of the server as shown on the panel (optional)", 'server-name'),
             "Type" => "text",
-            "Size" => 30,
+            "Size" => 25,
             "Default" => 'Ptero Sync Server',
             'SimpleMode' => true,
         ],
@@ -254,37 +251,37 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "Disable OOM Killer",
             "Description" => pterosyncAddHelpTooltip("Should the Out Of Memory Killer be disabled (optional)", 'oom-disabled'),
             "Type" => "yesno",
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "backups" => [
             "FriendlyName" => "Backups",
             "Description" => pterosyncAddHelpTooltip("Client will be able to create this amount of backups for their server (optional)", 'backups'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "allocations" => [
             "FriendlyName" => "Allocations",
             "Description" => pterosyncAddHelpTooltip("Client will be able to create this amount of allocations for their server (optional)", 'allocations'),
             "Type" => "text",
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "ports_ranges" => [
             "FriendlyName" => "Ports Ranges",
             "Description" => pterosyncAddHelpTooltip($portDescription, 'ports-ranges'),
-            "Type" => "text",
-            "Size" => 15,
+            "Type" => "textarea",
+            "Size" => 10,
             "default" => '{"SERVER_PORT": "25565-25669"}',
             'SimpleMode' => true,
         ],
         "default_variables" => [
-            "FriendlyName" => "<script src=\"/modules/servers/pterosync/pterosync.js?v=" . time() . "\"></script> Default Variables",
+            "FriendlyName" => "Default Variables",
             "Description" => pterosyncAddHelpTooltip("Define default values for server variables in JSON format. For instance, set MAX_PLAYERS to 30 with {\"MAX_PLAYERS\": 30}. This is useful for consistent server settings and quick configuration.", 'default-variables'),
-            "Type" => "text",
+            "Type" => "textarea",
             "default" => '{"MAX_PLAYERS": 30}',
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         'server_port_offset' => [
@@ -292,7 +289,7 @@ function pterosync_ConfigOptions()
             "Description" => pterosyncAddHelpTooltip("Specify an offset for the Server Port, used for games requiring a specific increment above the SERVER_PORT. Enter '1' for games like ARK: Survival Evolved that need SERVER_PORT +1, or '123' for games like MTA requiring a larger increment. To disable this feature, simply input '0'", 'server-port-offset'),
             "Type" => "text",
             "default" => 0,
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ],
         "split_limit" => [
@@ -300,7 +297,7 @@ function pterosync_ConfigOptions()
             "Description" => pterosyncAddHelpTooltip("Adjust the number of allowed splits effortlessly. Just set the desired maximum number of server splits.", 'split_limit'),
             "Type" => "text",
             "default" => '0',
-            "Size" => 15,
+            "Size" => 25,
             'SimpleMode' => true,
         ]
     ];
@@ -374,16 +371,15 @@ function pterosync_TestConnection(array $params)
 
 function pterosync_CreateAccount(array $params)
 {
+
     try {
         $ports = pteroSyncGetOption($params, 'ports_ranges');
         $ports = json_decode($ports, true);
         if (!$ports) {
             throw new Exception('Failed to create server because ports is not in valid json format.');
         }
-
         $serverId = pteroSyncGetServerID($params);
         if ($serverId) throw new Exception('Failed to create server because it is already created.');
-
         $customFieldId = pteroSyncGetCustomFiledId($params);
 
         $userResult = pteroSyncApplicationApi($params, 'users/external/' . $params['clientsdetails']['id']);
@@ -608,18 +604,21 @@ function pterosync_CreateAccount(array $params)
 
         }
 
-
         unset($params['password']);
-
 
         // Check if IP & Port field have value. Prevents ":" being added if API error
         if (isset($_SERVER_IP) && isset($_SERVER_PORT)) {
             try {
                 $query = Capsule::table('tblhosting')->where('id', $params['serviceid'])->where('userid', $params['userid'])->update(array('domain' => $_SERVER_IP . ":" . $_SERVER_PORT));
-                pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
             } catch (Exception $e) {
                 return $e->getMessage() . "<br />" . $e->getTraceAsString();
             }
+        }
+
+        try {
+            pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
+        } catch (Exception $e) {
+            return $e->getMessage() . "<br />" . $e->getTraceAsString();
         }
 
         Capsule::table('tblhosting')->where('id', $params['serviceid'])->update([
@@ -860,14 +859,14 @@ function pterosync_ClientArea(array $params)
     global $_LANG;
     try {
         $hostname = pteroSyncGetHostname($params);
-        $serverData = pteroSyncGetServerID($params, true);
+        $serverId = $params['customfields']['UUID (Server ID)'];
+        $serverData = pteroSyncGetServerID($params, true, 'user,node');
         if (!$serverData) return [
             'templatefile' => 'clientarea',
             'vars' => [
-                'serviceurl' => $hostname,
+                'serverFound' => false
             ],
         ];
-
         $endpoint = 'servers/' . $serverData['identifier'] . '/resources';
         $serverState = pteroSyncClientApi($params, $endpoint);
 
@@ -890,18 +889,25 @@ function pterosync_ClientArea(array $params)
 
             pteroSyncreturnJsonMessage('ACTON_NOT_FOUND');
         }
-
         $actionUrl = "https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $userAttributes = $serverData['relationships']['user']['attributes'];
+        $nodeAttributes = $serverData['relationships']['node']['attributes'];
         return [
             'templatefile' => 'clientarea',
             'vars' => [
-                'serviceurl' => $hostname . '/server/' . $serverData['identifier'],
-                'current_state' => $serverState['attributes']['current_state'],
-                'starturl' => $actionUrl . '&modop=custom&a=startServer',
-                'rebooturl' => $actionUrl . '&modop=custom&a=restartServer',
-                'stopurl' => $actionUrl . '&modop=custom&a=stopServer',
-                'getstateurl' => $actionUrl . '&modop=custom&a=getState',
-                'serverIp' => $params['domain']
+                'serviceUrl' => $hostname . '/server/' . $serverData['identifier'],
+                'currentState' => $serverState['attributes']['current_state'],
+                'getStateUrl' => $actionUrl . '&modop=custom&a=getState',
+                'startUrl' => $actionUrl . '&modop=custom&a=startServer',
+                'rebootUrl' => $actionUrl . '&modop=custom&a=restartServer',
+                'stopUrl' => $actionUrl . '&modop=custom&a=stopServer',
+                'serverIp' => $params['domain'],
+                'serverId' => $serverId,
+                'ftpDetails' => [
+                    'username' => $userAttributes['username'] . '.' . $serverData['identifier'],
+                    'host' => 'sftp://' . $nodeAttributes['fqdn'] . ':' . $nodeAttributes['daemon_sftp']
+                ],
+                'serverFound' => true
             ],
         ];
     } catch (Exception $err) {

@@ -1,0 +1,22 @@
+#divModuleSettings .module-settings .select-inline,
+#divModuleSettings .module-settings .select2-container--default
+{
+    width: 300px;
+    max-width: 300px;
+}
+#divModuleSettings .module-settings .fieldarea{
+    width: 25%;
+}
+#divModuleSettings .module-settings textarea{
+    width: 327px;
+    height: 75px;
+}
+
+
+.ptero-content{
+    min-width: 450px;
+}
+
+.mb-3{
+    margin-bottom: 20px;
+}

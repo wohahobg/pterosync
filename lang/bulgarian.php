@@ -25,5 +25,15 @@ $keys = [
     'SERVER_START_PANEL' => "СТАРТИРАНЕ НА СЪРВЪРА",
     'SERVER_RESTART_PANEL' => "РЕСТАРТИРАНЕ НА СЪРВЪРА",
     'SERVER_STOP_PANEL' => "СПИРАНЕ НА СЪРВЪРА",
-    'SERVER_NOT_FOUND' => "Този сървър не съществува. Моля, свържете се с нас, ако смятате, че това е грешка."
+    'SERVER_NOT_FOUND' => "Този сървър не съществува. Моля, свържете се с нас, ако смятате, че това е грешка.",
+    "IP_COPIED" => "IP на сървъра е копирано!",
+    "ID_COPIED" => "ID на сървъра е копирано!",
+    "SERVER_FTP_INFORMATION" => "Информация за FTP на сървъра",
+    "SERVER_FTP_PASSWORD_INFORMATION" => "Моля, имайте предвид, че паролата за FTP е същата като тази, която използвате за достъп до контролния панел!",
+    "SERVER_FTP_USERNAME_COPIED" => "Потребителското име е копирано!",
+    "SERVER_FTP_HOST_COPIED" => "FTP хостът е копиран!",
+    "SERVER_FTP_HOST_AND_PORT" => "FTP Хост + Порт",
+    "SERVER_FTP_USERNAME" => "Потребителско име",
+    "SERVER_IP" => "Сървър IP",
+    "SERVER_ID" => "Сървър ID"
 ];

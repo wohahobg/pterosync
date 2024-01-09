@@ -25,5 +25,15 @@ $keys = [
     'SERVER_START_PANEL' => "START SERVER",
     'SERVER_RESTART_PANEL' => "RESTART SERVER",
     'SERVER_STOP_PANEL' => "STOP SERVER",
-    'SERVER_NOT_FOUND' => "This server does not exist. Please contact us if you believe that's a mistake."
+    'SERVER_NOT_FOUND' => "This server does not exist. Please contact us if you believe that's a mistake.",
+    "IP_COPIED" => "Server IP Copied!",
+    "ID_COPIED" => "Server ID Copied!",
+    "SERVER_FTP_INFORMATION" => "FTP Information",
+    "SERVER_FTP_PASSWORD_INFORMATION" => "Please note, the FTP password is the same as the password you use to access the control panel!",
+    "SERVER_FTP_USERNAME_COPIED" => "Username copied!",
+    "SERVER_FTP_HOST_COPIED" => "FTP Host copied!",
+    "SERVER_FTP_HOST_AND_PORT" => "FTP Host + Port",
+    "SERVER_FTP_USERNAME" => "Username",
+    "SERVER_IP" => "Server IP",
+    "SERVER_ID" => "Server ID",
 ];

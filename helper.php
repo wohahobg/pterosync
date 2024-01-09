@@ -16,8 +16,11 @@ class PteroSyncSettings
     public $dynamic_variables = [
         'SERVER_PORT_OFFSET'
     ];
-    ///$environment
+
     public $dynamic_environment_array = [];
+
+    public $jsPath = '';
+    public $cssPath = '';
 
     public function __construct()
     {
@@ -29,6 +32,8 @@ class PteroSyncSettings
         foreach ($data as $key => $value) {
             $this->$key = $value;
         }
+        $this->jsPath = '//' . $_SERVER['HTTP_HOST'] . '/modules/servers/pterosync/pterosync.js?v=' . time();
+        $this->cssPath = '//' . $_SERVER['HTTP_HOST'] . '/modules/servers/pterosync/pterosync.css?v=' . time();
     }
 
     public static function get(): ?PteroSyncSettings
@@ -175,14 +180,28 @@ function pteroSyncGetMemorySwapAndDisck($params)
     return [$memory, $swap, $disk];
 }
 
-function pteroSyncGetServerID(array $params, $raw = false)
+function pteroSyncGetServerID(array $params, $raw = false, $include = false)
 {
-
-    $serverResult = pteroSyncApplicationApi($params, 'servers/external/' . $params['serviceid'], [], 'GET', true);
+    if ($include) {
+        $include = '?include=' . $include;
+    }
+    $serverResult = pteroSyncApplicationApi($params, 'servers/external/' . $params['serviceid'] . $include, [], 'GET', true);
 
     if ($serverResult['status_code'] === 200) {
         if ($raw) return $serverResult['attributes'];
         else return $serverResult['attributes']['id'];
+    } else if ($serverResult['status_code'] === 500) {
+        throw new Exception('Failed to get server, panel errored. Check panel logs for more info.');
+    }
+    return false;
+}
+
+function pteroSyncGetClientServer($params, $serverId)
+{
+    $serverResult = pteroSyncClientApi($params, 'servers/' . $serverId . '?include=subusers', [], 'GET', true);
+
+    if ($serverResult['status_code'] === 200) {
+        return $serverResult['attributes'];
     } else if ($serverResult['status_code'] === 500) {
         throw new Exception('Failed to get server, panel errored. Check panel logs for more info.');
     }
@@ -363,7 +382,8 @@ function pteroSyncfindFreePortsForAllVariablesOnIP($ports, $variables, $_SERVER_
     }
 }
 
-function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRange = false) {
+function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRange = false)
+{
     $serverPortValue = $isRange ? $serverPort : $serverPort . '-' . $serverPort;
     $serverPortArray = ['SERVER_PORT' => $serverPortValue];
     $serverPortOffsetArray = [];
@@ -517,12 +537,4 @@ function pteroSyncServerState($params, $serverState, $serverId)
     pteroSyncReturnJson([
         'state' => $serverState
     ], 200);
-}
-
-function pterosyncCheckPHPSelf($action = 'configproducts.php')
-{
-    if (!str_contains($_SERVER['PHP_SELF'], $action)) {
-        return true;
-    }
-    return false;
 }
