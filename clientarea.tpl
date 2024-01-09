@@ -5,7 +5,7 @@
         <p class="margin-top-bottom">
             <a href="{$serviceUrl}" target="_blank" class="btn btn-default">{$LANG.GOTO_PANEL}</a>
         </p>
-        <div class="row mb-3 mb-5">
+        <div class="row mt-2 mb-5">
             <div class="col-md-6">
                 <label for="change-text-id">
                     {$LANG.SERVER_ID}
@@ -27,27 +27,26 @@
                 <input
                         class="form-control text-center copy-text"
                         id="change-text-ip"
-                       data-id="change-text-ip"
-                       data-new-text="{$LANG.IP_COPIED}"
-                       data-clipboard-text="{$serverIp}"
-                       value="{$serverIp}" readonly>
+                        data-id="change-text-ip"
+                        data-new-text="{$LANG.IP_COPIED}"
+                        data-clipboard-text="{$serverIp}"
+                        value="{$serverIp}" readonly>
             </div>
         </div>
-        <h2 class="mb-3">{$LANG.QUICK_ACTIONS_PANEL}</h2>
-        <!-- Your HTML Buttons using Smarty variables -->
+        <h2 class="mt-2">{$LANG.QUICK_ACTIONS_PANEL}</h2>
         <button id="startButton"
                 onclick="if (confirm('Are you sure you want to start this server?')) sendRequest('{$startUrl}')"
-                class="btn btn-success" {if $current_state === 'online'} disabled{/if}><i
+                class="btn btn-success mt-2" {if $current_state === 'online'} disabled{/if}><i
                     class="fas fa-play"></i> {$LANG.SERVER_START_PANEL}</button>
         <button id="rebootButton"
                 onclick="if (confirm('Are you sure you want to reboot this server?')) sendRequest('{$rebootUrl}')"
-                class="btn btn-warning" {if $current_state === 'offline'} disabled{/if}><i
+                class="btn btn-warning mt-2" {if $current_state === 'offline'} disabled{/if}><i
                     class="fas fa-sync"></i> {$LANG.SERVER_RESTART_PANEL}</button>
         <button id="stopButton"
                 onclick="if (confirm('Are you sure you want to stop this server?')) sendRequest('{$stopUrl}')"
-                class="btn btn-danger" {if $current_state === 'offline'} disabled{/if}><i
+                class="btn btn-danger mt-2" {if $current_state === 'offline'} disabled{/if}><i
                     class="fas fa-stop"></i> {$LANG.SERVER_STOP_PANEL}</button>
-        <button type="button" class="btn btn-info" data-toggle="modal" data-target="#ftpDetails">
+        <button type="button" class="btn btn-info mt-2" data-toggle="modal" data-target="#ftpDetails">
             <i class="fas fa-file-upload"></i>
             {$LANG.FTP_DETAILS}
         </button>
@@ -66,7 +65,7 @@
                             {$LANG.SERVER_FTP_PASSWORD_INFORMATION}
                         </div>
                         <!-- FTP Host + Port -->
-                        <div class="mb-3">
+                        <div class="mt-2">
                             <label for="ftpHost" class="form-label">
                                 {$LANG.SERVER_FTP_HOST_AND_PORT}
                             </label>
@@ -78,7 +77,7 @@
                                    value="{$ftpDetails['host']}" readonly>
                         </div>
                         <!-- FTP Username -->
-                        <div class="mb-3">
+                        <div class="mt-2">
                             <label for="ftpUsername" class="form-label">
                                 {$LANG.SERVER_FTP_USERNAME}
                             </label>
