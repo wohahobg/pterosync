@@ -35,5 +35,6 @@ $keys = [
     "SERVER_FTP_HOST_AND_PORT" => "FTP Хост + Порт",
     "SERVER_FTP_USERNAME" => "Потребителско име",
     "SERVER_IP" => "Сървър IP",
-    "SERVER_ID" => "Сървър ID"
+    "SERVER_ID" => "Сървър ID",
+    "FTP_DETAILS" => "FTP детайли"
 ];

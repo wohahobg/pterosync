@@ -7,10 +7,11 @@
         </p>
         <div class="row mb-3 mb-5">
             <div class="col-md-6">
-                <label>Server ID</label>
+                <label for="change-text-id">
+                    {$LANG.SERVER_ID}
+                </label>
                 <input
                         class="form-control text-center copy-text"
-                        aria-label="serverId"
                         type="text"
                         id="change-text-id"
                         data-id="change-text-id"
@@ -20,7 +21,9 @@
                         readonly>
             </div>
             <div class="col-md-6">
-                <label>Server IP</label>
+                <label for="change-text-ip">
+                    {$LANG.SERVER_IP}
+                </label>
                 <input
                         class="form-control text-center copy-text"
                         id="change-text-ip"
@@ -45,7 +48,8 @@
                 class="btn btn-danger" {if $current_state === 'offline'} disabled{/if}><i
                     class="fas fa-stop"></i> {$LANG.SERVER_STOP_PANEL}</button>
         <button type="button" class="btn btn-info" data-toggle="modal" data-target="#ftpDetails">
-            FTP Details
+            <i class="fas fa-file-upload"></i>
+            {$LANG.FTP_DETAILS}
         </button>
         <!-- The modal -->
         <div class="modal fade" id="ftpDetails" tabindex="-1" role="dialog" aria-labelledby="modalLabel"

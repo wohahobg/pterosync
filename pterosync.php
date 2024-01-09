@@ -8,8 +8,7 @@ use WHMCS\Config\Setting;
 
 global $_LANG;
 
-include_once dirname(__FILE__) . '/helper.php';
-
+$language = $_SESSION['Language'] ?? 'english';
 // Load language file based on the client's language preference
 if (file_exists(dirname(__FILE__) . '/lang/' . $language . '.php')) {
     include dirname(__FILE__) . '/lang/' . $language . '.php';
@@ -18,6 +17,7 @@ if (file_exists(dirname(__FILE__) . '/lang/' . $language . '.php')) {
 }
 $_LANG = array_merge($keys, $_LANG);
 
+include_once dirname(__FILE__) . '/helper.php';
 
 /*
  * Module PART
@@ -27,7 +27,7 @@ function pterosync_MetaData()
 {
     return [
         "DisplayName" => "Ptero Sync",
-        "APIVersion" => "1.2",
+        "APIVersion" => "1.1",
         "RequiresServer" => true,
     ];
 }

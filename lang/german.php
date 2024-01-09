@@ -13,6 +13,7 @@ $keys = [
     "SERVER_FTP_PASSWORD_INFORMATION" => "Bitte beachten Sie, dass das FTP-Passwort dasselbe ist wie das Passwort, das Sie für den Zugang zum Control Panel verwenden!",
     "SERVER_FTP_USERNAME_COPIED" => "FTP Nutzernamen Kopiert!",
     "SERVER_FTP_HOST_COPIED" => "FTP Adresse Kopiert!",
-    "SERVER_IP" => "Server-IP",
-    "SERVER_ID" => "Server-ID",
+    "SERVER_IP" => "Server IP",
+    "SERVER_ID" => "Server ID",
+    "FTP_DETAILS" => "FTP Details"
 ];
