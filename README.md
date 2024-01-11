@@ -82,7 +82,7 @@ Our module supports games or applications that require multiple ports. We've imp
 ## Overwriting Values Through Configurable Options
 Values can be overwritten using either Configurable Options or Custom Fields.
 
-The name should exactly match what you want to overwrite. For example, `dedicated_ip` will overwrite the `dedicated_ip` value based on its selection. Valid options include `server_name`, `memory`, `swap`, `io`, `cpu`, `disk`, `nest_id`, `egg_id`, `pack_id`, `location_id`, `dedicated_ip`, `port_range`, `image`, `startup`, `databases`, `allocations`, `backups`, `oom_disabled`, `username`.
+The name should exactly match what you want to overwrite. For example, `dedicated_ip` will overwrite the `dedicated_ip` value based on its selection. Valid options include `server_name`, `memory`, `swap`, `io`, `cpu`, `disk`, `nest_id`, `egg_id`, `pack_id`, `location_id`, `dedicated_ip`, `ports_ranges`, `image`, `startup`, `databases`, `allocations`, `backups`, `oom_disabled`, `username`.
 
 This approach also applies to any environment variable name. For instance, `Player Slots` will overwrite the environment variable named "Player Slots" to its value.
 
