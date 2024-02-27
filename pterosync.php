@@ -858,6 +858,7 @@ function pterosync_ClientArea(array $params)
 
     global $_LANG;
     try {
+        $isAdmin = $_SESSION['adminid'] ?? 0;
         $hostname = pteroSyncGetHostname($params);
         $serverId = $params['customfields']['UUID (Server ID)'];
         $serverData = pteroSyncGetServerID($params, true, 'user,node');
@@ -907,7 +908,9 @@ function pterosync_ClientArea(array $params)
                     'username' => $userAttributes['username'] . '.' . $serverData['identifier'],
                     'host' => 'sftp://' . $nodeAttributes['fqdn'] . ':' . $nodeAttributes['daemon_sftp']
                 ],
-                'serverFound' => true
+                'serverFound' => true,
+                'serviceId' => $params['serviceid'],
+                'isAdmin' => $isAdmin
             ],
         ];
     } catch (Exception $err) {

@@ -8,7 +8,7 @@ $(document).ajaxSuccess(function (e, jqxhr, settings) {
 
         // Check if the 'module' key is 'pterosync'
         if (data.module === 'pterosync') {
-            if (settings.url.includes('configproducts.php')){
+            if (settings.url.includes('configproducts.php')) {
                 loadAdminConfigProducts();
             }
         }
@@ -121,8 +121,11 @@ function sendRequest(url) {
 }
 
 $(document).ready(function () {
+
+    if (typeof currentState !== 'undefined') return;
+
     disableButtons(currentState)
-   // $('[href="#tabChangepw"]').click()
+    // $('[href="#tabChangepw"]').click()
     $(document).on('click', '.copy-text', function () {
         // Get the text from data-text attribute
         const text = $(this).data('clipboard-text');

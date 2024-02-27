@@ -240,11 +240,20 @@ function pteroSyncGetNodeAllocations($params, $serverNode, $nodePath)
 {
     $path = sprintf($nodePath . '?per_page=1', $serverNode);
     $nodeAllocations = pteroSyncApplicationApi($params, $path);
+
     if ($nodeAllocations['status_code'] == 200 && $nodeAllocations['meta']['pagination']['total'] > 0) {
-        $limit = $nodeAllocations['meta']['pagination']['total'];
-        $path = sprintf($nodePath . '?per_page=' . $limit . '&filter[server_id]=0', $serverNode);
-        $data = pteroSyncApplicationApi($params, $path);
-        return $data['data'];
+        $totalItems = $nodeAllocations['meta']['pagination']['total'];
+        $perPage = 2000; // Maximum items per page
+        $totalPages = ceil($totalItems / $perPage); // Calculate total number of pages
+        $allData = [];
+        for ($page = 1; $page <= $totalPages; $page++) {
+            $path = sprintf($nodePath . '?per_page=' . $perPage . '&page=' . $page . '&filter[server_id]=0', $serverNode);
+            $data = pteroSyncApplicationApi($params, $path);
+            if (!empty($data['data'])) {
+                $allData = array_merge($allData, $data['data']);
+            }
+        }
+        return $allData;
     }
     return false;
 }
@@ -416,6 +425,7 @@ function pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips
     if (!$foundPorts) {
         $foundPorts = pteroSyncSetServerPortVariables($variables, $ports['SERVER_PORT'], $ips, true);
     }
+
     PteroSyncSettings::get()->addFileLog([
         'foundedPorts' => json_encode($foundPorts),
         'variables' => json_encode($variables),

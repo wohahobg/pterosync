@@ -6,7 +6,7 @@
             <a href="{$serviceUrl}" target="_blank" class="btn btn-default">{$LANG.GOTO_PANEL}</a>
         </p>
         <div class="row mt-2 mb-5">
-            <div class="col-md-6">
+            <div class="col">
                 <label for="change-text-id">
                     {$LANG.SERVER_ID}
                 </label>
@@ -20,7 +20,7 @@
                         value="{$serverId}"
                         readonly>
             </div>
-            <div class="col-md-6">
+            <div class="col">
                 <label for="change-text-ip">
                     {$LANG.SERVER_IP}
                 </label>
