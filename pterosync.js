@@ -122,7 +122,7 @@ function sendRequest(url) {
 
 $(document).ready(function () {
 
-    if (typeof currentState !== 'undefined') return;
+    if (typeof currentState === 'undefined') return;
 
     disableButtons(currentState)
     // $('[href="#tabChangepw"]').click()
