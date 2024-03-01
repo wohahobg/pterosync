@@ -1,3 +1,4 @@
+
 <div class="text-center">
     {if $serverFound == false}
         <p class="alert alert-warning">{$LANG.SERVER_NOT_FOUND}</p>
