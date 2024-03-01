@@ -244,6 +244,8 @@ function pteroSyncGetNodeAllocations($params, $serverNode, $nodePath)
     if ($nodeAllocations['status_code'] == 200 && $nodeAllocations['meta']['pagination']['total'] > 0) {
         $totalItems = $nodeAllocations['meta']['pagination']['total'];
         $perPage = 2000; // Maximum items per page
+//TODO Make so it use meta>p>total pages in a for loop, and loop x records per page until we found a ports,  we need go store each results in the cache instance , and use all available ports to match the requirements. 
+//TODO instant of using $allData store the last fetched page in the cache instance and use +1 for next fetch if need.
         $totalPages = ceil($totalItems / $perPage); // Calculate total number of pages
         $allData = [];
         for ($page = 1; $page <= $totalPages; $page++) {
