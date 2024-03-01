@@ -1,5 +1,6 @@
 <?php
 
+
 use Illuminate\Database\Capsule\Manager as Capsule;
 use WHMCS\Config\Setting;
 
@@ -23,7 +24,8 @@ class PteroSyncSettings
     public $cssPath = '';
 
     public function __construct()
-    {
+    { 
+       
         $data = file_get_contents(dirname(__FILE__) . '/config.json');
         $data = json_decode($data, true);
         if (!$data) {
@@ -32,6 +34,8 @@ class PteroSyncSettings
         foreach ($data as $key => $value) {
             $this->$key = $value;
         }
+
+        //TODO add better way if getting the whmc path, as some people want to use site.com/client (wired) as we need to get that /<something>
         $this->jsPath = '//' . $_SERVER['HTTP_HOST'] . '/modules/servers/pterosync/pterosync.js?v=' . time();
         $this->cssPath = '//' . $_SERVER['HTTP_HOST'] . '/modules/servers/pterosync/pterosync.css?v=' . time();
     }
