@@ -93,4 +93,4 @@ Useful trick: You can use the | seperator to change the display name of the vari
 This can be caused from any of the following: Wrong location, not enough disk space/CPU/RAM, or no allocations matching the provided criteria.
 
 ### Discord Server
-Join our Discord Server [Click Me](https://gamecms.org/discord) for support and queries.
+Join our Discord Server [Click Me](https://discord.com/invite/ABGVfZ7a5u) for support and queries.
