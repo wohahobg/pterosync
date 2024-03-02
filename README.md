@@ -1,4 +1,5 @@
 # PteroSync
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G2G7V5BCQ)
 
 PteroSync is a trailblazer in server deployment and management, offering advanced solutions that make complex server processes simpler and more efficient. Our technology empowers businesses to focus on growth by efficiently handling server allocation and deployment. Designed to meet a wide range of business needs, our scalable and reliable solutions are at the forefront of server management technology.
 
@@ -92,4 +93,4 @@ Useful trick: You can use the | seperator to change the display name of the vari
 This can be caused from any of the following: Wrong location, not enough disk space/CPU/RAM, or no allocations matching the provided criteria.
 
 ### Discord Server
-Join our Discord Server [GameCMS.ORG](https://gamecms.org/discord) for support and queries.
+Join our Discord Server [Click Me](https://gamecms.org/discord) for support and queries.
