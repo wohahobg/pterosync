@@ -1,7 +1,6 @@
 <?php
 
 
-
 use Illuminate\Database\Capsule\Manager as Capsule;
 use WHMCS\Config\Setting;
 
@@ -12,6 +11,9 @@ class PteroSyncSettings
     public $swap_as_gb = false;
     public $disk_as_gb = false;
     public $memory_as_gb = false;
+    public $show_server_information = false;
+
+    public $game_panel = "pterodactyl";
 
     public $server_port_offset = 0;
 
@@ -24,9 +26,26 @@ class PteroSyncSettings
     public $jsPath = '';
     public $cssPath = '';
 
+    public array $panelCurlConfig = [
+        'user' => 'PteroSync',
+        'accept' => 'Application/vnd.pterodactyl.v1+json'
+    ];
+
+    public array $curlRequestSettings = [
+        'pterodactyl' => [
+            'user' => 'PteroSync',
+            'accept' => 'Application/vnd.pterodactyl.v1+json'
+        ],
+        'wisp' => [
+            'user' => 'WISP',
+            'accept' => 'Application/vnd.wisp.v1+json',
+        ]
+    ];
+
     public function __construct()
-    { 
-       
+    {
+
+        global $CONFIG;
         $data = file_get_contents(dirname(__FILE__) . '/config.json');
         $data = json_decode($data, true);
         if (!$data) {
@@ -35,10 +54,13 @@ class PteroSyncSettings
         foreach ($data as $key => $value) {
             $this->$key = $value;
         }
+        if (isset($this->curlRequestSettings[$this->game_panel])) {
+            $this->panelCurlConfig = $this->curlRequestSettings[$this->game_panel];
+        }
 
-        //TODO add better way if getting the whmc path, as some people want to use site.com/client (wired) as we need to get that /<something>
-        $this->jsPath = '//' . $_SERVER['HTTP_HOST'] . '/modules/servers/pterosync/pterosync.js?v=' . time();
-        $this->cssPath = '//' . $_SERVER['HTTP_HOST'] . '/modules/servers/pterosync/pterosync.css?v=' . time();
+        $whmcsBaseUrl = rtrim($CONFIG['SystemURL'], '/');
+        $this->jsPath = $whmcsBaseUrl . '/modules/servers/pterosync/pterosync.js?v=' . time();
+        $this->cssPath = $whmcsBaseUrl . '/modules/servers/pterosync/pterosync.css?v=' . time();
     }
 
     public static function get(): ?PteroSyncSettings
@@ -134,14 +156,14 @@ function pteroSyncApplicationApi(array $params, $endpoint, array $data = [], $me
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-    curl_setopt($curl, CURLOPT_USERAGENT, "PteroSync-WHMCS");
+    curl_setopt($curl, CURLOPT_USERAGENT, PteroSyncSettings::get()->panelCurlConfig['user'] . "-WHMCS");
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
     curl_setopt($curl, CURLOPT_TIMEOUT, 5);
 
     $headers = [
         "Authorization: Bearer " . $params['serverpassword'],
-        "Accept: Application/vnd.pterodactyl.v1+json",
+        "Accept: " . PteroSyncSettings::get()->panelCurlConfig['accept'],
     ];
 
     return pteroSyncApiHandler($method, $data, $curl, $headers, $dontLog, $url);
@@ -155,14 +177,14 @@ function pteroSyncClientApi(array $params, $endPoint, array $data = [], $method 
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-    curl_setopt($curl, CURLOPT_USERAGENT, "PteroSync-WHMCS");
+    curl_setopt($curl, CURLOPT_USERAGENT, PteroSyncSettings::get()->panelCurlConfig['user'] . "-WHMCS");
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
     curl_setopt($curl, CURLOPT_TIMEOUT, 5);
 
     $headers = [
         "Authorization: Bearer " . $params['serveraccesshash'],
-        "Accept: Application/vnd.pterodactyl.v1+json",
+        "Accept: " . PteroSyncSettings::get()->panelCurlConfig['accept'],
     ];
 
     return pteroSyncApiHandler($method, $data, $curl, $headers, $dontLog, $url);
@@ -249,7 +271,7 @@ function pteroSyncGetNodeAllocations($params, $serverNode, $nodePath)
     if ($nodeAllocations['status_code'] == 200 && $nodeAllocations['meta']['pagination']['total'] > 0) {
         $totalItems = $nodeAllocations['meta']['pagination']['total'];
         $perPage = 2000; // Maximum items per page
-//TODO Make so it use meta>p>total pages in a for loop, and loop x records per page until we found a ports,  we need go store each results in the cache instance , and use all available ports to match the requirements. 
+//TODO Make so it use meta>p>total pages in a for loop, and loop x records per page until we found a ports,  we need go store each results in the cache instance , and use all available ports to match the requirements.
 //TODO instant of using $allData store the last fetched page in the cache instance and use +1 for next fetch if need.
         $totalPages = ceil($totalItems / $perPage); // Calculate total number of pages
         $allData = [];
@@ -554,4 +576,41 @@ function pteroSyncServerState($params, $serverState, $serverId)
     pteroSyncReturnJson([
         'state' => $serverState
     ], 200);
+}
+
+function pteroSyncGenerateServerStatusArray($server)
+{
+    if (!PteroSyncSettings::get()->show_server_information) {
+        return [false, false, false];
+    }
+    $address = '';
+    $environment = $server['container']['environment'];
+    $useQueryPort = isset($environment['QUERY_PORT']);
+    if ($useQueryPort) {
+        $port = $environment['QUERY_PORT'];
+    }
+    $allocations = $server['relationships']['allocations']['data'];
+    foreach ($allocations as $allocation) {
+        if ($allocation['attributes']['id'] == $server['allocation']) {
+            $address = $allocation['attributes']['ip'];
+            if (!$useQueryPort) {
+                $port = $allocation['attributes']['port'];
+            }
+            break;
+        }
+    }
+    $nestName = strtolower($server['relationships']['nest']['attributes']['name']);
+    $nestName = explode(' ', $nestName);
+    $game = $nestName[0] ?? false;
+    if (isset($nestName[1]) && $nestName[1] != 'servers') {
+        $game .= ' ' . $nestName[1];
+    }
+    $gameEngine = match ($game) {
+        'minecraft' => 'minecraft',
+        'samp' => 'samp',
+        'mta' => 'mta',
+        'fivem' => 'fivem',
+        default => 'source'
+    };
+    return [$gameEngine, $address, $port];
 }
