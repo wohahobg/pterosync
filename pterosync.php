@@ -384,7 +384,11 @@ function pterosync_CreateAccount(array $params)
 
         $userResult = pteroSyncApplicationApi($params, 'users/external/' . $params['clientsdetails']['id']);
         if ($userResult['status_code'] === 404) {
-            $userResult = pteroSyncApplicationApi($params, 'users?filter[email]=' . urlencode($params['clientsdetails']['email']));
+            if (PteroSyncSettings::get()->game_panel == 'wisp') {
+                $userResult = pteroSyncApplicationApi($params, 'users?search=' . urlencode($params['clientsdetails']['email']));
+            } elseif (PteroSyncSettings::get()->game_panel == 'pterodactyl') {
+                $userResult = pteroSyncApplicationApi($params, 'users?filter[email]=' . urlencode($params['clientsdetails']['email']));
+            }
             if ($userResult['meta']['pagination']['total'] === 0) {
                 $userResult = pteroSyncApplicationApi($params, 'users', [
                     'username' => pteroSyncGetOption($params, 'username', pteroSyncGenerateUsername()),
@@ -395,12 +399,12 @@ function pterosync_CreateAccount(array $params)
                 ], 'POST');
             } else {
                 foreach ($userResult['data'] as $key => $value) {
-                    if ($value['attributes']['email'] === $params['clientsdetails']['email']) {
-                        $userResult = array_merge($userResult, $value);
+                    if ($value['attributes']['email'] == $params['clientsdetails']['email']) {
+                        $userResult = $value;
+                        $userResult['status_code'] = 200;
                         break;
                     }
                 }
-                $userResult = array_merge($userResult, $userResult['data'][0]);
             }
         }
 
@@ -811,7 +815,7 @@ function pterosync_LoginLink(array $params)
 
         $hostname = pteroSyncGetHostname($params);
         $button1 = '<a class="btn btn-info text-uppercase"  
-                    href="' . $hostname . '/server/' . $server['uuid'] . '" target="_blank">
+                    href="' . $hostname . '/server/' . $server['identifier'] . '" target="_blank">
                  <i class="fas fa-eye fa-fw"></i>
                 View Server
               </a>';
@@ -861,13 +865,16 @@ function pterosync_ClientArea(array $params)
         $isAdmin = $_SESSION['adminid'] ?? 0;
         $hostname = pteroSyncGetHostname($params);
         $serverId = $params['customfields']['UUID (Server ID)'];
-        $serverData = pteroSyncGetServerID($params, true, 'user,node');
+        $serverData = pteroSyncGetServerID($params, true, 'user,node,allocations,nest');
         if (!$serverData) return [
             'templatefile' => 'clientarea',
             'vars' => [
                 'serverFound' => false
             ],
         ];
+
+        [$game, $address, $port] = pteroSyncGenerateServerStatusArray($serverData);
+
         $endpoint = 'servers/' . $serverData['identifier'] . '/resources';
         $serverState = pteroSyncClientApi($params, $endpoint);
 
@@ -881,6 +888,7 @@ function pterosync_ClientArea(array $params)
                 'startServer' => 'pteroSyncStartServer',
                 'restartServer' => 'pteroSyncRestartServer',
                 'stopServer' => 'pteroSyncStopServer',
+                'killServer' => 'pteroSyncKillServer',
                 'getState', 'getFtpDetails' => 'pteroSyncServerState',
                 default => false,
             };
@@ -902,6 +910,7 @@ function pterosync_ClientArea(array $params)
                 'startUrl' => $actionUrl . '&modop=custom&a=startServer',
                 'rebootUrl' => $actionUrl . '&modop=custom&a=restartServer',
                 'stopUrl' => $actionUrl . '&modop=custom&a=stopServer',
+                'killUrl' => $actionUrl . '&modop=custom&a=killServer',
                 'serverIp' => $params['domain'],
                 'serverId' => $serverId,
                 'ftpDetails' => [
@@ -910,7 +919,12 @@ function pterosync_ClientArea(array $params)
                 ],
                 'serverFound' => true,
                 'serviceId' => $params['serviceid'],
-                'isAdmin' => $isAdmin
+                'isAdmin' => $isAdmin,
+                'gameQueryData' => [
+                    'game' => $game,
+                    'address' => $address,
+                    'port' => $port,
+                ]
             ],
         ];
     } catch (Exception $err) {
