@@ -1,4 +1,3 @@
-
 <div class="text-center">
     {if $serverFound == false}
         <p class="alert alert-warning">{$LANG.SERVER_NOT_FOUND}</p>
@@ -6,6 +5,9 @@
         <p class="margin-top-bottom">
             <a href="{$serviceUrl}" target="_blank" class="btn btn-default">{$LANG.GOTO_PANEL}</a>
         </p>
+        <div class="row mt-2 justify-content-center" id="game-server-status">
+
+        </div>
         <div class="row mt-2 mb-5">
             <div class="col">
                 <label for="change-text-id">
@@ -36,17 +38,27 @@
         </div>
         <h2 class="mt-2">{$LANG.QUICK_ACTIONS_PANEL}</h2>
         <button id="startButton"
-                onclick="if (confirm('Are you sure you want to start this server?')) sendRequest('{$startUrl}')"
-                class="btn btn-success mt-2" {if $current_state === 'online'} disabled{/if}><i
+                onclick="if (confirm('{$LANG.SERVER_START_PANEL_CONFIRM_MESSAGE}')) sendRequest('{$startUrl}','start')"
+                {if $current_state === 'online'} disabled{/if}
+                class="btn btn-success mt-2"><i
                     class="fas fa-play"></i> {$LANG.SERVER_START_PANEL}</button>
         <button id="rebootButton"
-                onclick="if (confirm('Are you sure you want to reboot this server?')) sendRequest('{$rebootUrl}')"
-                class="btn btn-warning mt-2" {if $current_state === 'offline'} disabled{/if}><i
+                onclick="if (confirm('{$LANG.SERVER_RESTART_PANEL_CONFIRM_MESSAGE}')) sendRequest('{$rebootUrl}', 'restart')"
+                {if $current_state === 'offline'} disabled{/if}
+                class="btn btn-warning mt-2"><i
                     class="fas fa-sync"></i> {$LANG.SERVER_RESTART_PANEL}</button>
         <button id="stopButton"
-                onclick="if (confirm('Are you sure you want to stop this server?')) sendRequest('{$stopUrl}')"
-                class="btn btn-danger mt-2" {if $current_state === 'offline'} disabled{/if}><i
+                onclick="if (confirm('{$LANG.SERVER_STOP_PANEL_CONFIRM_MESSAGE}')) sendRequest('{$stopUrl}','stop')"
+                {if $current_state === 'offline'} disabled{/if}
+                class="btn btn-danger mt-2"><i
                     class="fas fa-stop"></i> {$LANG.SERVER_STOP_PANEL}</button>
+        <button id="killButton"
+                style="display: none;"
+                {if $current_state === 'stopping'} disabled{/if}
+                onclick="if (confirm('{$LANG.SERVER_KILL_PANEL_CONFIRM_MESSAGE}')) sendRequest('{$killUrl}','kill')"
+                class="btn btn-danger mt-2"><i
+                    class="fas fa-times"></i> {$LANG.SERVER_KILL_PANEL}</button>
+
         <button type="button" class="btn btn-info mt-2" data-toggle="modal" data-target="#ftpDetails">
             <i class="fas fa-file-upload"></i>
             {$LANG.FTP_DETAILS}
@@ -104,3 +116,11 @@
     let currentState = "{$currentState}";
     const serverStateUrl = "{$getStateUrl}"
 </script>
+{if $gameQueryData['game'] !== false }
+    <script>
+        let serverQueryData = {
+            "game": "{$gameQueryData['game']}",
+            "address": "{$gameQueryData['address']}:{$gameQueryData['port']}"
+        }
+    </script>
+{/if}
