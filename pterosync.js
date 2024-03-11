@@ -69,62 +69,138 @@ function loadAdminConfigProducts() {
     })
 }
 
-function disableButtons(state) {
+function disableButtons(state, isStable = false) {
+    // Define button jQuery objects for easy reference
     var startButton = $('#startButton');
     var rebootButton = $('#rebootButton');
     var stopButton = $('#stopButton');
-    currentState = state;
+    var killButton = $('#killButton');
+
+    // Basic state handling without considering stability
     switch (state) {
         case "running":
             startButton.prop('disabled', true);
-            rebootButton.prop('disabled', false);
-            stopButton.prop('disabled', false);
+            rebootButton.prop('disabled', !isStable); // Only enable if stable
+            stopButton.prop('disabled', !isStable); // Only enable if stable
+            killButton.hide();
+            setGameServerStatus();
             break;
         case "offline":
             startButton.prop('disabled', false);
             rebootButton.prop('disabled', true);
             stopButton.prop('disabled', true);
+            killButton.hide();
+            setGameServerStatus();
             break;
         case "starting":
         case "stopping":
             startButton.prop('disabled', true);
             rebootButton.prop('disabled', true);
             stopButton.prop('disabled', true);
+            if (state === "stopping") {
+                killButton.show();
+                stopButton.hide();
+            }
             break;
         default:
+            // Assume all buttons should be disabled in unknown states
             startButton.prop('disabled', true);
             rebootButton.prop('disabled', true);
             stopButton.prop('disabled', true);
+            killButton.hide();
             break;
     }
 }
 
-
-function sendRequest(url) {
-    disableButtons('request')
+function sendRequest(url, type) {
     var $button = $(event.currentTarget);
     var originalHtml = $button.html();
-    $button.html('<i class="fas fa-spinner fa-spin"></i> ' + originalHtml);
+    $button.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
 
-    $.post(url, function (data, status) {
-        disableButtons(data.state)
+    let stateSince = null;
+    let stabilizationPeriod = 8000;
+    if (type === 'start'){
+        stabilizationPeriod = 1;
+    }
+
+    $.post(url, function (data) {
+        disableButtons(data.state);
+
+        // Setup an interval for checking state changes
         const interval = setInterval(function () {
-            $.post(serverStateUrl, function (data, status) {
-                if (data.state === 'running') {
-                    $button.html(originalHtml); // Restore original content after completion
-                    clearInterval(interval)
+            $.post(serverStateUrl, function (data) {
+                console.log(type, data.state);
+
+                if ((type === 'kill' || type === 'stop') && data.state === 'offline') {
+                    clearInterval(interval);
+                    $button.html(originalHtml).prop('disabled', false);
+                    disableButtons(data.state, true); // Mark as stable now that it's 'offline'
+                    return;
                 }
-                disableButtons(data.state)
-            })
-        }, 2000);
+                if ((type === 'start' || type === 'restart') && data.state === 'running') {
+                    if (!stateSince) {
+                        stateSince = Date.now();
+                    } else if (Date.now() - stateSince > stabilizationPeriod) {
+                        clearInterval(interval);
+                        $button.html(originalHtml).prop('disabled', false);
+                        disableButtons(data.state, true);
+                    }
+                } else if (data.state !== 'running') {
+                    stateSince = null;
+                }
+            });
+        }, 3000);
+    }).fail(function () {
+        // Handle request failure: re-enable the button and alert the user
+        $button.html(originalHtml).prop('disabled', false);
+        alert('Request failed. Please try again.');
     });
+}
+
+function setGameServerStatus() {
+    if (typeof serverQueryData !== 'undefined') {
+        const {game, address} = serverQueryData;
+
+        // Construct the URL for the API call
+        const apiUrl = `https://api.gamecms.org/game/${game}/${address}`;
+
+        // Fetch the server status
+        fetch(apiUrl)
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                } else {
+                    throw new Error('Server is offline');
+                }
+            })
+            .then(data => {
+
+
+                document.getElementById('game-server-status').innerHTML = `
+                <ul class="list-group list-group-flush">
+                    ${data.server_name !== '' ? `<li class="list-group-item">Server Name: <strong>${data.server_name}</strong></li>` : ''}
+                    <li class="list-group-item">Status: <span class="text-success"><i class="fas fa-circle"></i> Online</span></li>
+                    <li class="list-group-item">Players: <strong>${data.players.online}/${data.players.max}</strong></li>
+                </ul>
+                `;
+
+            })
+            .catch(error => {
+                // Handle the case where the server is offline or the fetch failed
+                document.getElementById('game-server-status').innerHTML = `
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Status: <span class="text-danger"><i class="fas fa-circle"></i> Offline</span></li>
+                </ul>
+            `;
+            });
+    }
 }
 
 $(document).ready(function () {
 
     if (typeof currentState === 'undefined') return;
 
-    disableButtons(currentState)
+    disableButtons(currentState, true)
     // $('[href="#tabChangepw"]').click()
     $(document).on('click', '.copy-text', function () {
         // Get the text from data-text attribute
