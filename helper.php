@@ -563,12 +563,29 @@ function pteroSyncStopServer($params, $serverState, $serverId)
     ], 'POST');
     if ($power['status_code'] == 204) {
         pteroSyncReturnJson([
-            'state' => 'offline'
+            'state' => 'stopping'
         ], 200);
     }
     pteroSyncreturnJsonMessage('SERVER_COULD_NOT_STOP', 400);
     die();
+}
 
+function pteroSyncKillServer($params, $serverState, $serverId)
+{
+    if ($serverState == 'offline' || $serverState == 'stopping') {
+        pteroSyncreturnJsonMessage('SERVER_STOPPED', 200);
+    }
+    $endpoint = 'servers/' . $serverId . '/power';
+    $power = pteroSyncClientApi($params, $endpoint, [
+        'signal' => 'kill'
+    ], 'POST');
+    if ($power['status_code'] == 204) {
+        pteroSyncReturnJson([
+            'state' => 'stopping'
+        ], 200);
+    }
+    pteroSyncreturnJsonMessage('SERVER_COULD_NOT_STOP', 400);
+    die();
 }
 
 function pteroSyncServerState($params, $serverState, $serverId)
