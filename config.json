@@ -1,4 +1,5 @@
 {
+  "game_panel_comment": "For what Game Panel is the module. Supported panels: wisp & pterodactyl",
   "game_panel": "pterodactyl",
   "swap_as_gb_comment": "Mode to specify swap amounts as GB instead of MB",
   "swap_as_gb": false,
