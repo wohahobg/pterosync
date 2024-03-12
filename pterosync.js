@@ -109,6 +109,7 @@ function disableButtons(state, isStable = false) {
     }
 }
 
+
 function sendRequest(url, type) {
 
     var $button = $(event.currentTarget);
@@ -117,7 +118,7 @@ function sendRequest(url, type) {
 
     let stateSince = null;
     let stabilizationPeriod = 8000;
-    if (type === 'start'){
+    if (type === 'start') {
         stabilizationPeriod = 1;
     }
 
@@ -175,6 +176,7 @@ function setGameServerStatus() {
 
             })
             .catch(error => {
+                console.log('PteroSync Server Status Error', error);
                 document.getElementById('game-server-status').innerHTML = `
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">Status: <span class="text-danger"><i class="fas fa-circle"></i> Offline</span></li>
