@@ -6,7 +6,6 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 class PteroSyncInstance
 {
     private static PteroSyncInstance|null $instance = null;
-
     public $swap_as_gb = false;
     public $disk_as_gb = false;
     public $memory_as_gb = false;
@@ -257,7 +256,7 @@ function pteroSyncApiHandler(mixed $method, array $data, CurlHandle|false $curl,
     if ($responseData['status_code'] === 0 && !$dontLog) logModuleCall("PteroSync-WHMCS", "CURL ERROR", curl_error($curl), "");
 
     curl_close($curl);
-    if (isset($data['password'])){
+    if (isset($data['password'])) {
         //let's unset that ?
         unset($data['password']);
     }
@@ -390,12 +389,19 @@ function pteroSyncGetNodeAllocations($params, $serverNode, $nodePath)
     $perPage = 200;
     $PteroSyncSettings = PteroSyncInstance::get();
     $currentPage = $PteroSyncSettings->fetchingNextPage;
-    $path = sprintf($nodePath . '?per_page=' . $perPage . '&page=' . $currentPage, $serverNode);
+    $path = sprintf(
+        '%s?per_page=%d&page=%d&filter[server_id]=0',
+        $nodePath,
+        $perPage,
+        $currentPage
+    );
 
     $nodeAllocations = pteroSyncApplicationApi($params, $path);
 
     if ($nodeAllocations['status_code'] == 200 && !empty($nodeAllocations['data'])) {
+
         $PteroSyncSettings->fetchedResults = array_merge($PteroSyncSettings->fetchedResults ?? [], $nodeAllocations['data']);
+
         if (!empty($nodeAllocations['meta']['pagination']['links']['next'])) {
             $PteroSyncSettings->fetchingNextPage = $currentPage + 1;
             $PteroSyncSettings->fetching = true;
