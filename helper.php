@@ -725,7 +725,7 @@ function pteroSyncServerState($params, $serverState, $serverId)
 
 function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
 {
-    if (!PteroSyncInstance::get()->show_server_information || $hide_server_status !== "on") {
+    if (!PteroSyncInstance::get()->show_server_information || $hide_server_status === "on") {
         return [false, false, false];
     }
 
