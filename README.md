@@ -10,6 +10,9 @@ This module is an enhanced version of the original [Pterodactyl WHMCS module](ht
 - **PHP Version**: PHP 8.0 or higher.
 - **WHMCS Compatibility**: Works with versions of WHMCS that support PHP 8.0 or higher.
 
+## Wiki
+
+Explore the [PteroSync Wiki](https://github.com/wohahobg/PteroSync/wiki) for quick setup, configuration, and troubleshooting guides on integrating WHMCS with Pterodactyl.
 
 ## Enhanced Features
 
