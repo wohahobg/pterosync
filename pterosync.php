@@ -778,6 +778,7 @@ function pterosync_ChangePackage(array $params)
             elseif (isset($attr['default_value'])) $environment[$var] = $attr['default_value'];
         }
 
+
         $image = pteroSyncGetOption($params, 'image', $eggData['attributes']['docker_image']);
         $startup = pteroSyncGetOption($params, 'startup', $eggData['attributes']['startup']);
         $updateData = [
@@ -789,6 +790,11 @@ function pterosync_ChangePackage(array $params)
         ];
         $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/startup', $updateData, 'PATCH');
         if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update startup of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
+
+        if ($eggId !== $serverData['egg']) {
+            pteroSyncApplicationApi($params, 'servers/' . $serverId . '/reinstall', [], 'POST');
+        }
+
         $_SERVER_ID = $serverData['uuid'];
         $customFieldId = pteroSyncGetCustomFiledId($params);
 
