@@ -778,8 +778,8 @@ function pterosync_ChangePackage(array $params)
             elseif (isset($attr['default_value'])) $environment[$var] = $attr['default_value'];
         }
 
-        $image = pteroSyncGetOption($params, 'image', $serverData['container']['image']);
-        $startup = pteroSyncGetOption($params, 'startup', $serverData['container']['startup_command']);
+        $image = pteroSyncGetOption($params, 'image', $eggData['attributes']['docker_image']);
+        $startup = pteroSyncGetOption($params, 'startup', $eggData['attributes']['startup']);
         $updateData = [
             'environment' => $environment,
             'startup' => $startup,
