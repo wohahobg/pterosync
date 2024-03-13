@@ -50,6 +50,23 @@ add_hook('ClientAreaHeadOutput', 1, function ($params) {
     return $urls;
 });
 
+add_hook('ClientAreaPrimarySidebar', 1, function(\WHMCS\View\Menu\Item $primarySidebar)
+{
+    $ActionDetails = $primarySidebar->getChild("Service Details Actions");
+    if (empty($ActionDetails)) {
+        return;
+    }
+    if (PteroSyncInstance::get()->enable_client_area_password_changer !== true) return;
+
+    $ActionDetailsChildren = $ActionDetails->getChildren();
+    $kidsToIcon = ["Change Password"];
+    foreach($ActionDetailsChildren as $key => $Action_details_child) {
+        if (in_array($key, $kidsToIcon)) {
+            $ActionDetails->removeChild($key);
+        }
+    }
+});
+
 add_hook('ClientAdd', 1, function ($vars) {
     if (PteroSyncInstance::get()->enable_whmcs_user_sync !== true) return;
     $data = PteroSyncInstance::get()->hooksData['UserAdd'] ?? [];
