@@ -10,6 +10,9 @@ This module is an enhanced version of the original [Pterodactyl WHMCS module](ht
 - **PHP Version**: PHP 8.0 or higher.
 - **WHMCS Compatibility**: Works with versions of WHMCS that support PHP 8.0 or higher.
 
+## Wiki
+
+Explore the [PteroSync Wiki](https://github.com/wohahobg/PteroSync/wiki) for quick setup, configuration, and troubleshooting guides on integrating WHMCS with Pterodactyl.
 
 ## Enhanced Features
 
@@ -28,6 +31,11 @@ This module is an enhanced version of the original [Pterodactyl WHMCS module](ht
 - **Multiple Port Allocation**: Facilitates the allocation of multiple ports for complex networking requirements, a significant feature for games and applications with specific port needs. For more details, see our [FAQ section](#FAQ).
 
 - **Default Variables Support**: Enables pre-setting common variables for faster and more consistent server setups.
+
+- **Game Server Status**: Enables the display of game server status, including current player count and online/offline status, providing real-time insights directly within your panel.
+
+- **WHMCS Pterodactyl Sync**: Offers a comprehensive solution for syncing client data between WHMCS and Pterodactyl, ensuring a cohesive ecosystem. For setup guidance, visit our [Setup Guide](https://github.com/wohahobg/PteroSync/wiki/WHMCS‐Pterodactyl-Sync-Setup).
+
 
 Leverage the PteroSync module to upgrade your server management experience, utilizing the latest innovations for the ever-evolving demands of today's business environment.
 
