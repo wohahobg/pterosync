@@ -678,12 +678,11 @@ function pterosync_TerminateAccount(array $params)
 
 function pterosync_ChangePassword(array $params)
 {
-    if (PteroSyncInstance::get()->enable_client_area_password_changer !== true) {
-        throw new Exception("Password Change Unavailable: The option to change passwords directly from the product page is currently disabled. For password updates, please proceed to the 'Change Password' tab.");
-    }
 
     try {
-
+        if (PteroSyncInstance::get()->enable_client_area_password_changer !== true) {
+            throw new Exception ("Password Change Unavailable: The option to change passwords directly from the product page is currently disabled. For password updates, please proceed to the 'Change Password' tab.");
+        }
         if ($params['password'] === '') throw new Exception('The password cannot be empty.');
 
         $serverData = pteroSyncGetServerID($params, true);
