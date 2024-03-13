@@ -557,7 +557,7 @@ function pterosync_CreateAccount(array $params)
             }
             $allocationArray['add_allocations'] = $additional;
 
-            $new_server = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
+            $updateResults = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
                 'memory' => (int)$memory,
                 'swap' => (int)$swap,
                 'io' => (int)$io,
@@ -573,12 +573,12 @@ function pterosync_CreateAccount(array $params)
                 ],
             ], $allocationArray), 'PATCH');
 
-            if ($new_server['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
+            if ($updateResults['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResults['status_code'] . '. Enable module debug log for more info.');
 
 
-            $allocation = $new_server['attributes']['allocation'];
-            $newServerAllocations = $new_server['attributes']['relationships']['allocations']['data'];
-            $_SERVER_ID = $new_server['attributes']['uuid'];
+            $allocation = $updateResults['attributes']['allocation'];
+            $newServerAllocations = $updateResults['attributes']['relationships']['allocations']['data'];
+            $_SERVER_ID = $updateResults['attributes']['uuid'];
             foreach ($newServerAllocations as $newServerAllocation) {
                 if ($newServerAllocation['attributes']['id'] == $allocation) {
                     $_SERVER_IP = $newServerAllocation['attributes']['ip'];
