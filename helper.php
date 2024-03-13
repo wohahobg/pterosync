@@ -2,17 +2,17 @@
 
 
 use Illuminate\Database\Capsule\Manager as Capsule;
-use WHMCS\Config\Setting;
 
-class PteroSyncSettings
+class PteroSyncInstance
 {
-    private static PteroSyncSettings|null $instance = null;
+    private static PteroSyncInstance|null $instance = null;
 
     public $swap_as_gb = false;
     public $disk_as_gb = false;
     public $memory_as_gb = false;
     public $show_server_information = false;
-
+    public $enable_client_area_password_changer = true;
+    public $enable_whmcs_user_sync = false;
     public $game_panel = "pterodactyl";
 
     public $server_port_offset = 0;
@@ -42,6 +42,16 @@ class PteroSyncSettings
         ]
     ];
 
+    public $fetchingPagination = [];
+    /**
+     * @var true
+     */
+    public bool $fetching = true;
+    public int $fetchingNextPage = 1;
+    public array $fetchedResults = [];
+    public array $hooksData = [];
+    private array|false $server = false;
+
     public function __construct()
     {
 
@@ -63,13 +73,123 @@ class PteroSyncSettings
         $this->cssPath = $whmcsBaseUrl . '/modules/servers/pterosync/pterosync.css?v=' . time();
     }
 
-    public static function get(): ?PteroSyncSettings
+
+    public static function get(): ?PteroSyncInstance
     {
         if (self::$instance === null) {
-            self::$instance = new PteroSyncSettings();
+            self::$instance = new PteroSyncInstance();
+        }
+        return self::$instance;
+    }
+
+    public function getServer()
+    {
+        if (!$this->server) {
+            $server = Capsule::table('tblservers')
+                ->where('type', 'pterosync')
+                ->first();
+            $this->server = [
+                'serverhostname' => $server->hostname,
+                'serverusername' => $server->username,
+                'serverpassword' => decrypt($server->password),
+                'serveraccesshash' => $server->accesshash,
+                'serversecure' => $server->secure
+            ];
+        }
+        return $this->server;
+    }
+
+    public function getClient($userId)
+    {
+        if (isset($_SESSION['uid'])) return $this->getClientById($_SESSION['uid']);
+        $client = Capsule::table('tblusers_clients')
+            ->where('auth_user_id', '=', $userId)
+            ->orderBy('last_login', 'desc')
+            ->first();
+        if ($client) return $this->getClientById($client->client_id);
+        logModuleCall("PteroSync-WHMCS", 'Could not find valid client for the given user id.', ['userId' => $userId], '', '');
+        return false;
+    }
+
+    private function getClientById($id)
+    {
+        try {
+            return WHMCS\User\Client::findOrFail($id);
+        } catch (Exception $e) {
+            logModuleCall("PteroSync-WHMCS", 'Could not find valid client data for the given client id.', ['clientId' => $id], '', '');
+            return false;
         }
 
-        return self::$instance;
+    }
+
+    public function changePterodactylPassword($userResult, $params, $password)
+    {
+        $updateResult = pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], [
+            'username' => $userResult['attributes']['username'],
+            'email' => $userResult['attributes']['email'],
+            'first_name' => $userResult['attributes']['first_name'],
+            'last_name' => $userResult['attributes']['last_name'],
+            'password' => $password
+        ], 'PATCH');
+        if ($updateResult['status_code'] !== 200) throw new Exception('Failed to change password, received error code: ' . $updateResult['status_code'] . '.');
+    }
+
+    public function updatePterodactylUserData($userResult, $params, $column)
+    {
+        $defaultAttributes = [
+            'username' => $userResult['attributes']['username'],
+            'email' => $userResult['attributes']['email'],
+            'first_name' => $userResult['attributes']['first_name'],
+            'last_name' => $userResult['attributes']['last_name'],
+        ];
+        $arr = array_merge($defaultAttributes, $column);
+
+        $updateResult = pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], $arr, 'PATCH');
+        if ($updateResult['status_code'] !== 200) throw new Exception('Failed to change ' . $column . ', received error code: ' . $updateResult['status_code'] . '.');
+    }
+
+    public function getPterodactylUser($params, array $client = [], $create = true)
+    {
+        $userResult = pteroSyncApplicationApi($params, 'users/external/' . $client['id']);
+        if ($userResult['status_code'] === 404) {
+            if (!isset($client['email'])) return $userResult;
+
+            if (PteroSyncInstance::get()->game_panel == 'wisp') {
+                $userResult = pteroSyncApplicationApi($params, 'users?search=' . urlencode($client['email']));
+            } elseif (PteroSyncInstance::get()->game_panel == 'pterodactyl') {
+                $userResult = pteroSyncApplicationApi($params, 'users?filter[email]=' . urlencode($client['email']));
+            }
+
+            if ($create === true && $userResult['meta']['pagination']['total'] === 0) {
+                $arr = [
+                    'username' => $client['username'],
+                    'email' => $client['email'],
+                    'first_name' => $client['firstname'],
+                    'last_name' => $client['lastname'],
+                    'external_id' => (string)$client['id'],
+                ];
+                if (isset($client['password'])) {
+                    $arr['password'] = $client['password'];
+                }
+                $userResult = pteroSyncApplicationApi($params, 'users', $arr, 'POST');
+            } else {
+                foreach ($userResult['data'] as $key => $value) {
+                    if ($value['attributes']['email'] == $client['email']) {
+                        $userResult = $value;
+                        $userResult['status_code'] = 200;
+                        //Let's update the external_id to match the actual client id.
+                        $arr['external_id'] = (string)$client['id'];
+                        if (isset($client['password'])) {
+                            $arr['password'] = $client['password'];
+                        }
+                        $this->updatePterodactylUserData($userResult, $params, $arr);
+
+                        break;
+                    }
+                }
+            }
+        }
+        return $userResult;
     }
 
 
@@ -100,14 +220,12 @@ class PteroSyncSettings
     }
 }
 
-function pteroSyncError($func, $params, Exception $err)
-{
-    logModuleCall("pteroSync-WHMCS", $func, $params, $err->getMessage(), $err->getTraceAsString());
-}
 
 function pteroSyncGetHostname(array $params)
 {
+
     $hostname = $params['serverhostname'];
+
     if ($hostname === '') throw new Exception('Could not find the panel\'s hostname - did you configure server group for the product?');
     // For whatever reason, WHMCS converts some characters of the hostname to their literal meanings (- => dash, etc) in some cases
     foreach ([
@@ -126,8 +244,8 @@ function pteroSyncApiHandler(mixed $method, array $data, CurlHandle|false $curl,
     if ($method === 'POST' || $method === 'PATCH') {
         $jsonData = json_encode($data);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $jsonData);
-        array_push($headers, "Content-Type: application/json");
-        array_push($headers, "Content-Length: " . strlen($jsonData));
+        $headers[] = "Content-Type: application/json";
+        $headers[] = "Content-Length: " . strlen($jsonData);
     }
 
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
@@ -136,11 +254,14 @@ function pteroSyncApiHandler(mixed $method, array $data, CurlHandle|false $curl,
     $responseData = json_decode($response, true);
     $responseData['status_code'] = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
-    if ($responseData['status_code'] === 0 && !$dontLog) logModuleCall("pteroSync-WHMCS", "CURL ERROR", curl_error($curl), "");
+    if ($responseData['status_code'] === 0 && !$dontLog) logModuleCall("PteroSync-WHMCS", "CURL ERROR", curl_error($curl), "");
 
     curl_close($curl);
-
-    if (!$dontLog) logModuleCall("pteroSync-WHMCS", $method . " - " . $url,
+    if (isset($data['password'])){
+        //let's unset that ?
+        unset($data['password']);
+    }
+    if (!$dontLog) logModuleCall("PteroSync-WHMCS", $method . " - " . $url,
         isset($data) ? json_encode($data) : "",
         print_r($responseData, true));
 
@@ -156,14 +277,14 @@ function pteroSyncApplicationApi(array $params, $endpoint, array $data = [], $me
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-    curl_setopt($curl, CURLOPT_USERAGENT, PteroSyncSettings::get()->panelCurlConfig['user'] . "-WHMCS");
+    curl_setopt($curl, CURLOPT_USERAGENT, PteroSyncInstance::get()->panelCurlConfig['user'] . "-WHMCS");
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
     curl_setopt($curl, CURLOPT_TIMEOUT, 5);
 
     $headers = [
         "Authorization: Bearer " . $params['serverpassword'],
-        "Accept: " . PteroSyncSettings::get()->panelCurlConfig['accept'],
+        "Accept: " . PteroSyncInstance::get()->panelCurlConfig['accept'],
     ];
 
     return pteroSyncApiHandler($method, $data, $curl, $headers, $dontLog, $url);
@@ -177,14 +298,14 @@ function pteroSyncClientApi(array $params, $endPoint, array $data = [], $method 
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-    curl_setopt($curl, CURLOPT_USERAGENT, PteroSyncSettings::get()->panelCurlConfig['user'] . "-WHMCS");
+    curl_setopt($curl, CURLOPT_USERAGENT, PteroSyncInstance::get()->panelCurlConfig['user'] . "-WHMCS");
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
     curl_setopt($curl, CURLOPT_TIMEOUT, 5);
 
     $headers = [
         "Authorization: Bearer " . $params['serveraccesshash'],
-        "Accept: " . PteroSyncSettings::get()->panelCurlConfig['accept'],
+        "Accept: " . PteroSyncInstance::get()->panelCurlConfig['accept'],
     ];
 
     return pteroSyncApiHandler($method, $data, $curl, $headers, $dontLog, $url);
@@ -193,15 +314,15 @@ function pteroSyncClientApi(array $params, $endPoint, array $data = [], $method 
 function pteroSyncGetMemorySwapAndDisck($params)
 {
     $memory = pteroSyncGetOption($params, 'memory');
-    if (PteroSyncSettings::get()->memory_as_gb) {
+    if (PteroSyncInstance::get()->memory_as_gb) {
         $memory = pteroSyncConvertToMB($memory);
     }
     $swap = pteroSyncGetOption($params, 'swap');
-    if (PteroSyncSettings::get()->swap_as_gb) {
+    if (PteroSyncInstance::get()->swap_as_gb) {
         $swap = pteroSyncConvertToMB($swap);
     }
     $disk = pteroSyncGetOption($params, 'disk');
-    if (PteroSyncSettings::get()->disk_as_gb) {
+    if (PteroSyncInstance::get()->disk_as_gb) {
         $disk = pteroSyncConvertToMB($disk);
     }
     return [$memory, $swap, $disk];
@@ -265,25 +386,26 @@ function pteroSyncConvertToMB($input)
 
 function pteroSyncGetNodeAllocations($params, $serverNode, $nodePath)
 {
-    $path = sprintf($nodePath . '?per_page=1', $serverNode);
+
+    $perPage = 200;
+    $PteroSyncSettings = PteroSyncInstance::get();
+    $currentPage = $PteroSyncSettings->fetchingNextPage;
+    $path = sprintf($nodePath . '?per_page=' . $perPage . '&page=' . $currentPage, $serverNode);
+
     $nodeAllocations = pteroSyncApplicationApi($params, $path);
 
-    if ($nodeAllocations['status_code'] == 200 && $nodeAllocations['meta']['pagination']['total'] > 0) {
-        $totalItems = $nodeAllocations['meta']['pagination']['total'];
-        $perPage = 2000; // Maximum items per page
-//TODO Make so it use meta>p>total pages in a for loop, and loop x records per page until we found a ports,  we need go store each results in the cache instance , and use all available ports to match the requirements.
-//TODO instant of using $allData store the last fetched page in the cache instance and use +1 for next fetch if need.
-        $totalPages = ceil($totalItems / $perPage); // Calculate total number of pages
-        $allData = [];
-        for ($page = 1; $page <= $totalPages; $page++) {
-            $path = sprintf($nodePath . '?per_page=' . $perPage . '&page=' . $page . '&filter[server_id]=0', $serverNode);
-            $data = pteroSyncApplicationApi($params, $path);
-            if (!empty($data['data'])) {
-                $allData = array_merge($allData, $data['data']);
-            }
+    if ($nodeAllocations['status_code'] == 200 && !empty($nodeAllocations['data'])) {
+        $PteroSyncSettings->fetchedResults = array_merge($PteroSyncSettings->fetchedResults ?? [], $nodeAllocations['data']);
+        if (!empty($nodeAllocations['meta']['pagination']['links']['next'])) {
+            $PteroSyncSettings->fetchingNextPage = $currentPage + 1;
+            $PteroSyncSettings->fetching = true;
+        } else {
+            $PteroSyncSettings->fetchingNextPage = 1;
+            $PteroSyncSettings->fetching = false;
         }
-        return $allData;
+        return $PteroSyncSettings->fetchedResults;
     }
+
     return false;
 }
 
@@ -348,9 +470,9 @@ function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
                         $port['ip'] = $ip;
                         $freePorts[$var] = $port;
 
-                        if ($var == 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && PteroSyncSettings::get()->server_port_offset > 0) {
-                            $offset = $port['port'] + PteroSyncSettings::get()->server_port_offset;
-                            PteroSyncSettings::get()->addFileLog([
+                        if ($var == 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && PteroSyncInstance::get()->server_port_offset > 0) {
+                            $offset = $port['port'] + PteroSyncInstance::get()->server_port_offset;
+                            PteroSyncInstance::get()->addFileLog([
                                 'offset' => $offset,
                                 'port' => $port['port']
                             ], 'New server port found!');
@@ -428,7 +550,7 @@ function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRang
     if (isset($variables['SERVER_PORT_OFFSET'])) {
         unset($variables['SERVER_PORT_OFFSET']);
         if (!$isRange) {
-            $offset = $serverPort + PteroSyncSettings::get()->server_port_offset;
+            $offset = $serverPort + PteroSyncInstance::get()->server_port_offset;
             $serverPortOffsetArray = ['SERVER_PORT_OFFSET' => $offset . '-' . $offset];
         }
     }
@@ -440,8 +562,8 @@ function pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips
 {
     //check if we need server port offset
     //if so we add it here
-    if (PteroSyncSettings::get()->server_port_offset > 0) {
-        $offset = $_SERVER_PORT + PteroSyncSettings::get()->server_port_offset;
+    if (PteroSyncInstance::get()->server_port_offset > 0) {
+        $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
         $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
     }
     //first we are checking for possible ips for the given IP.
@@ -455,7 +577,7 @@ function pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips
         $foundPorts = pteroSyncSetServerPortVariables($variables, $ports['SERVER_PORT'], $ips, true);
     }
 
-    PteroSyncSettings::get()->addFileLog([
+    PteroSyncInstance::get()->addFileLog([
         'foundedPorts' => json_encode($foundPorts),
         'variables' => json_encode($variables),
         'ports' => json_encode($ports),
@@ -597,7 +719,7 @@ function pteroSyncServerState($params, $serverState, $serverId)
 
 function pteroSyncGenerateServerStatusArray($server)
 {
-    if (!PteroSyncSettings::get()->show_server_information) {
+    if (!PteroSyncInstance::get()->show_server_information) {
         return [false, false, false];
     }
     $address = '';

@@ -1,14 +1,9 @@
 {
-  "game_panel_comment": "For what Game Panel is the module. Supported panels: wisp & pterodactyl",
   "game_panel": "pterodactyl",
-  "swap_as_gb_comment": "Mode to specify swap amounts as GB instead of MB",
   "swap_as_gb": false,
-  "disk_as_gb_comment": "Mode to specify disk amounts as GB instead of MB",
   "disk_as_gb": true,
-  "memory_as_gb_comment": "Mode to specify memory amounts as GB instead of MB",
   "memory_as_gb": true,
-  "show_server_information_comment": "This shows server information such as online players, max players and server status.",
-  "show_server_information_comment1": "Please note that we are using api.gamecms.org for this action.",
-  "show_server_information_comment2": "If some games are not working please open a github issue with the game and give much details as possible.",
-  "show_server_information": true
+  "show_server_information": true,
+  "enable_client_area_password_changer": false,
+  "enable_whmcs_user_sync": true
 }
