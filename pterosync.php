@@ -120,7 +120,8 @@ function pterosync_ConfigKeys()
         "ports_ranges" => "Ports Ranges",
         "default_variables" => "Default Variables",
         'server_port_offset' => "Server Port Offset",
-        "split_limit" => "Split Limit"
+        "split_limit" => "Split Limit",
+        "hide_server_status" => "Hide Server Status"
     ];
 
 }
@@ -298,6 +299,13 @@ function pterosync_ConfigOptions()
             "default" => '0',
             "Size" => 25,
             'SimpleMode' => true,
+        ],
+        "hide_server_status" => [
+            'FriendlyName' => "Hide Server Status",
+            "Description" => "Check to disable server status on client product page.",
+            "Type" => "yesno",
+            "Size" => 25,
+            'SimpleMode' => true,
         ]
     ];
 }
@@ -377,7 +385,7 @@ function pterosync_CreateAccount(array $params)
         if (!$ports) {
             throw new Exception('Failed to create server because ports is not in valid json format.');
         }
-        $serverId = pteroSyncGetServerID($params);
+        $serverId = pteroSyncGetServer($params);
         if ($serverId) throw new Exception('Failed to create server because it is already created.');
         $customFieldId = pteroSyncGetCustomFiledId($params);
 
@@ -627,7 +635,7 @@ function pterosync_CreateAccount(array $params)
 function pterosync_SuspendAccount(array $params)
 {
     try {
-        $serverId = pteroSyncGetServerID($params);
+        $serverId = pteroSyncGetServer($params);
         if (!$serverId) throw new Exception('Failed to suspend server because it doesn\'t exist.');
 
         $suspendResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/suspend', [], 'POST');
@@ -642,7 +650,7 @@ function pterosync_SuspendAccount(array $params)
 function pterosync_UnsuspendAccount(array $params)
 {
     try {
-        $serverId = pteroSyncGetServerID($params);
+        $serverId = pteroSyncGetServer($params);
         if (!$serverId) throw new Exception('Failed to unsuspend server because it doesn\'t exist.');
 
         $suspendResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/unsuspend', [], 'POST');
@@ -657,7 +665,7 @@ function pterosync_UnsuspendAccount(array $params)
 function pterosync_TerminateAccount(array $params)
 {
     try {
-        $serverId = pteroSyncGetServerID($params);
+        $serverId = pteroSyncGetServer($params);
         if (!$serverId) throw new Exception('Failed to terminate server because it doesn\'t exist.');
 
         $deleteResult = pteroSyncApplicationApi($params, 'servers/' . $serverId, [], 'DELETE');
@@ -685,7 +693,7 @@ function pterosync_ChangePassword(array $params)
         }
         if ($params['password'] === '') throw new Exception('The password cannot be empty.');
 
-        $serverData = pteroSyncGetServerID($params, true);
+        $serverData = pteroSyncGetServer($params, true);
         if (!$serverData) throw new Exception('Failed to change password because linked server doesn\'t exist.');
 
         $userId = $serverData['user'];
@@ -716,8 +724,10 @@ function pterosync_ChangePassword(array $params)
 
 function pterosync_ChangePackage(array $params)
 {
+
     try {
-        $serverData = pteroSyncGetServerID($params, true);
+
+        $serverData = pteroSyncGetServer($params, true);
         if (!$serverData) throw new Exception('Failed to change package of server because it doesn\'t exist.');
         $serverId = $serverData['id'];
 
@@ -802,7 +812,7 @@ function pterosync_LoginLink(array $params)
 {
     if ($params['moduletype'] !== 'pterosync') return;
     try {
-        $server = pteroSyncGetServerID($params, true);
+        $server = pteroSyncGetServer($params, true);
         if (!$server) return;
 
         $hostname = pteroSyncGetHostname($params);
@@ -857,7 +867,9 @@ function pterosync_ClientArea(array $params)
         $isAdmin = $_SESSION['adminid'] ?? 0;
         $hostname = pteroSyncGetHostname($params);
         $serverId = $params['customfields']['UUID (Server ID)'];
-        $serverData = pteroSyncGetServerID($params, true, 'user,node,allocations,nest');
+
+        $hide_server_status = pteroSyncGetOption($params, 'hide_server_status');
+        $serverData = pteroSyncGetServer($params, true, 'user,node,allocations,nest');
         if (!$serverData) return [
             'templatefile' => 'clientarea',
             'vars' => [
@@ -865,7 +877,7 @@ function pterosync_ClientArea(array $params)
             ],
         ];
 
-        [$game, $address, $port] = pteroSyncGenerateServerStatusArray($serverData);
+        [$game, $address, $port] = pteroSyncGenerateServerStatusArray($serverData, $hide_server_status);
 
         $endpoint = 'servers/' . $serverData['identifier'] . '/resources';
         $serverState = pteroSyncClientApi($params, $endpoint);

@@ -327,7 +327,7 @@ function pteroSyncGetMemorySwapAndDisck($params)
     return [$memory, $swap, $disk];
 }
 
-function pteroSyncGetServerID(array $params, $raw = false, $include = false)
+function pteroSyncGetServer(array $params, $raw = false, $include = false)
 {
     if ($include) {
         $include = '?include=' . $include;
@@ -723,11 +723,12 @@ function pteroSyncServerState($params, $serverState, $serverId)
     ], 200);
 }
 
-function pteroSyncGenerateServerStatusArray($server)
+function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
 {
-    if (!PteroSyncInstance::get()->show_server_information) {
+    if (!PteroSyncInstance::get()->show_server_information || $hide_server_status !== "on") {
         return [false, false, false];
     }
+
     $address = '';
     $environment = $server['container']['environment'];
     $useQueryPort = isset($environment['QUERY_PORT']);
