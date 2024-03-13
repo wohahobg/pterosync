@@ -29,6 +29,11 @@ This module is an enhanced version of the original [Pterodactyl WHMCS module](ht
 
 - **Default Variables Support**: Enables pre-setting common variables for faster and more consistent server setups.
 
+- **Game Server Status**: Enables the display of game server status, including current player count and online/offline status, providing real-time insights directly within your panel.
+
+- **WHMCS Pterodactyl Sync**: Offers a comprehensive solution for syncing client data between WHMCS and Pterodactyl, ensuring a cohesive ecosystem. For setup guidance, visit our [Setup Guide](https://github.com/wohahobg/PteroSync/wiki/WHMCS‐Pterodactyl-Sync-Setup).
+
+
 Leverage the PteroSync module to upgrade your server management experience, utilizing the latest innovations for the ever-evolving demands of today's business environment.
 
 # Module Installation Guide
