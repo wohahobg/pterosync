@@ -49,10 +49,11 @@ Follow these steps to install and configure the PteroSync module.
 Download the module zip file and unzip it to find the `pterosync` folder.
 
 ## Step 2: Upload to WHMCS
-Upload the `pterosync` folder to your WHMCS installation at `/path/to/whmcs/modules/servers/`.
+Upload the `pterosync` folder to your WHMCS installation at `/path/to/whmcs/modules/servers/`
 
 ## Step 3: Configure config.json
 Adjust the `config.json` in the module folder as needed.
+Checkout our [Config Key Guide](https://github.com/wohahobg/PteroSync/wiki/Config-Descriptions)
 
 ## Step 4: Server Configuration in WHMCS
 Set up a WHMCS server for PteroSync:
