@@ -506,21 +506,26 @@ function pterosync_CreateAccount(array $params)
         $_SERVER_PORT_ID = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['id'];
 
         $serverNode = $server['attributes']['node'];
-        $node_path = 'nodes/%s/allocations';
+        $node_path = 'nodes/' . $serverNode . '/allocations';
         $foundPorts = [];
         $variables = [];
         $ips = [];
-        $nodeAllocations = pteroSyncGetNodeAllocations($params, $serverNode, $node_path);
+        $nodeAllocations = [];
+        if ($ports){
+            $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
+        }
         while ($nodeAllocations && PteroSyncInstance::get()->fetching) {
             // Process the fetched allocations to find needed ports
             [$variables, $ips] = pteroSyncProcessAllocations($nodeAllocations, $eggData, $ports);
-            if (!$variables) break;
+            if (!$variables) {
+                PteroSyncInstance::get()->fetching = false;
+                break;
+            }
             $foundPorts = pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips);
-
             if ($foundPorts) {
                 break;
             } else {
-                $nodeAllocations = pteroSyncGetNodeAllocations($params, $serverNode, $node_path);
+                $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
             }
         }
 

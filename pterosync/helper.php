@@ -383,7 +383,7 @@ function pteroSyncConvertToMB($input)
     return $input * 1024;
 }
 
-function pteroSyncGetNodeAllocations($params, $serverNode, $nodePath)
+function pteroSyncGetNodeAllocations($params, $nodePath)
 {
 
     $perPage = 200;
