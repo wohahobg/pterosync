@@ -1,4 +1,7 @@
 <?php
+
+//require '/home/control.qgs-hosting.com/public_html/init.php';
+
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
@@ -17,6 +20,7 @@ if (file_exists(dirname(__FILE__) . '/lang/' . $language . '.php')) {
 $_LANG = array_merge($keys, $_LANG);
 
 include_once dirname(__FILE__) . '/helper.php';
+
 
 /*
  * Module PART
@@ -511,7 +515,7 @@ function pterosync_CreateAccount(array $params)
         $variables = [];
         $ips = [];
         $nodeAllocations = [];
-        if ($ports){
+        if ($ports) {
             $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
         }
         while ($nodeAllocations && PteroSyncInstance::get()->fetching) {
@@ -570,7 +574,7 @@ function pterosync_CreateAccount(array $params)
             }
             $allocationArray['add_allocations'] = $additional;
 
-            $updateResults = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
+            $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
                 'memory' => (int)$memory,
                 'swap' => (int)$swap,
                 'io' => (int)$io,
@@ -586,12 +590,12 @@ function pterosync_CreateAccount(array $params)
                 ],
             ], $allocationArray), 'PATCH');
 
-            if ($updateResults['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResults['status_code'] . '. Enable module debug log for more info.');
+            if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
 
 
-            $allocation = $updateResults['attributes']['allocation'];
-            $newServerAllocations = $updateResults['attributes']['relationships']['allocations']['data'];
-            $_SERVER_ID = $updateResults['attributes']['uuid'];
+            $allocation = $updateResult['attributes']['allocation'];
+            $newServerAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
+            $_SERVER_ID = $updateResult['attributes']['uuid'];
             foreach ($newServerAllocations as $newServerAllocation) {
                 if ($newServerAllocation['attributes']['id'] == $allocation) {
                     $_SERVER_IP = $newServerAllocation['attributes']['ip'];
@@ -614,10 +618,15 @@ function pterosync_CreateAccount(array $params)
         // Check if IP & Port field have value. Prevents ":" being added if API error
         if (isset($_SERVER_IP) && isset($_SERVER_PORT)) {
             try {
-                Capsule::table('tblhosting')->where('id', $params['serviceid'])->where('userid', $params['userid'])->update(array('domain' => $_SERVER_IP . ":" . $_SERVER_PORT));
+                Capsule::table('tblhosting')
+                    ->where('id', $params['serviceid'])
+                    ->where('userid', $params['userid'])
+                    ->update(array('domain' => $_SERVER_IP . ":" . $_SERVER_PORT));
             } catch (Exception $e) {
                 return $e->getMessage() . "<br />" . $e->getTraceAsString();
             }
+        } else {
+            logModuleCall("PteroSync-WHMCS", 'Server IP or Server Port is not set.', ['ip' => $_SERVER_IP, 'port' => $_SERVER_PORT], '', '');
         }
 
         try {
@@ -762,8 +771,20 @@ function pterosync_ChangePackage(array $params)
             ],
         ];
 
-        $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build', $updateData, 'PATCH');
+        $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', $updateData, 'PATCH');
         if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
+        $allocation = $updateResult['attributes']['allocation'];
+        $newServerAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
+        foreach ($newServerAllocations as $newServerAllocation) {
+            if ($newServerAllocation['attributes']['id'] == $allocation) {
+                $_SERVER_IP = $newServerAllocation['attributes']['ip'];
+                $_SERVER_PORT = $newServerAllocation['attributes']['port'];
+                $_SERVER_PORT_ID = $newServerAllocation['attributes']['id'];
+                break;
+            }
+        }
+
+
 
         $nestId = pteroSyncGetOption($params, 'nest_id');
         $eggId = pteroSyncGetOption($params, 'egg_id');
@@ -865,7 +886,7 @@ function pterosync_ChangePackage(array $params)
 //                    }
 //                    $allocationArray['add_allocations'] = $additional;
 //
-//                    $updateResults = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
+//                    $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
 //                        'memory' => (int)$memory,
 //                        'swap' => (int)$swap,
 //                        'io' => (int)$io,
@@ -881,12 +902,12 @@ function pterosync_ChangePackage(array $params)
 //                        ],
 //                    ], $allocationArray), 'PATCH');
 //
-//                    if ($updateResults['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResults['status_code'] . '. Enable module debug log for more info.');
+//                    if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
 //
 //
-//                    $allocation = $updateResults['attributes']['allocation'];
-//                    $newServerAllocations = $updateResults['attributes']['relationships']['allocations']['data'];
-//                    $_SERVER_ID = $updateResults['attributes']['uuid'];
+//                    $allocation = $updateResult['attributes']['allocation'];
+//                    $newServerAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
+//                    $_SERVER_ID = $updateResult['attributes']['uuid'];
 //                    foreach ($newServerAllocations as $newServerAllocation) {
 //                        if ($newServerAllocation['attributes']['id'] == $allocation) {
 //                            $_SERVER_IP = $newServerAllocation['attributes']['ip'];
@@ -911,8 +932,19 @@ function pterosync_ChangePackage(array $params)
 
         $_SERVER_ID = $serverData['uuid'];
         $customFieldId = pteroSyncGetCustomFiledId($params);
-
         pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
+        if (isset($_SERVER_IP) && isset($_SERVER_PORT)) {
+            try {
+                Capsule::table('tblhosting')
+                    ->where('id', $params['serviceid'])
+                    ->where('userid', $params['userid'])
+                    ->update(array('domain' => $_SERVER_IP . ":" . $_SERVER_PORT));
+            } catch (Exception $e) {
+                return $e->getMessage() . "<br />" . $e->getTraceAsString();
+            }
+        } else {
+            logModuleCall("PteroSync-WHMCS", 'Server IP or Server Port is not set.', ['ip' => $_SERVER_IP, 'port' => $_SERVER_PORT], '', '');
+        }
     } catch (Exception $err) {
         return $err->getMessage();
     }

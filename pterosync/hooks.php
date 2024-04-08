@@ -56,7 +56,7 @@ add_hook('ClientAreaPrimarySidebar', 1, function(\WHMCS\View\Menu\Item $primaryS
     if (empty($ActionDetails)) {
         return;
     }
-    if (PteroSyncInstance::get()->enable_client_area_password_changer !== true) return;
+    if (PteroSyncInstance::get()->enable_client_area_password_changer === true) return;
 
     $ActionDetailsChildren = $ActionDetails->getChildren();
     $kidsToIcon = ["Change Password"];
