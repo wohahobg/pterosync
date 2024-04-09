@@ -49,6 +49,7 @@ class PteroSyncInstance
     public int $fetchingNextPage = 1;
     public array $fetchedResults = [];
     public array $hooksData = [];
+    public bool $use_alias_ip = false;
     private array|false $server = false;
 
     public function __construct()

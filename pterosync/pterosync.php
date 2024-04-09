@@ -505,6 +505,9 @@ function pterosync_CreateAccount(array $params)
         $serverId = $server['attributes']['id'];
         // Get IP & Port and set on WHMCS "Dedicated IP" field
         $_SERVER_IP = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['ip'];
+        if (PteroSyncInstance::get()->use_alias_ip){
+            $_SERVER_IP = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['ip'];
+        }
         $_SERVER_ID = $server['attributes']['uuid'];
         $_SERVER_PORT = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['port'];
         $_SERVER_PORT_ID = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['id'];
@@ -599,6 +602,9 @@ function pterosync_CreateAccount(array $params)
             foreach ($newServerAllocations as $newServerAllocation) {
                 if ($newServerAllocation['attributes']['id'] == $allocation) {
                     $_SERVER_IP = $newServerAllocation['attributes']['ip'];
+                    if (PteroSyncInstance::get()->use_alias_ip){
+                        $_SERVER_IP = $newServerAllocation['attributes']['alias'];
+                    }
                     $_SERVER_PORT = $newServerAllocation['attributes']['port'];
                     $_SERVER_PORT_ID = $newServerAllocation['attributes']['id'];
                     break;
@@ -778,6 +784,9 @@ function pterosync_ChangePackage(array $params)
         foreach ($newServerAllocations as $newServerAllocation) {
             if ($newServerAllocation['attributes']['id'] == $allocation) {
                 $_SERVER_IP = $newServerAllocation['attributes']['ip'];
+                if (PteroSyncInstance::get()->use_alias_ip){
+                    $_SERVER_IP = $newServerAllocation['attributes']['alias'];
+                }
                 $_SERVER_PORT = $newServerAllocation['attributes']['port'];
                 $_SERVER_PORT_ID = $newServerAllocation['attributes']['id'];
                 break;
