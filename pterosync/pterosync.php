@@ -1,7 +1,4 @@
 <?php
-
-//require '/home/control.qgs-hosting.com/public_html/init.php';
-
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
@@ -505,8 +502,8 @@ function pterosync_CreateAccount(array $params)
         $serverId = $server['attributes']['id'];
         // Get IP & Port and set on WHMCS "Dedicated IP" field
         $_SERVER_IP = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['ip'];
-        if (PteroSyncInstance::get()->use_alias_ip){
-            $_SERVER_IP = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['ip'];
+        if (PteroSyncInstance::get()->use_alias_ip && $server['attributes']['relationships']['allocations']['data'][0]['attributes']['alias'] != '') {
+            $_SERVER_IP = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['alias'];
         }
         $_SERVER_ID = $server['attributes']['uuid'];
         $_SERVER_PORT = $server['attributes']['relationships']['allocations']['data'][0]['attributes']['port'];
@@ -602,7 +599,7 @@ function pterosync_CreateAccount(array $params)
             foreach ($newServerAllocations as $newServerAllocation) {
                 if ($newServerAllocation['attributes']['id'] == $allocation) {
                     $_SERVER_IP = $newServerAllocation['attributes']['ip'];
-                    if (PteroSyncInstance::get()->use_alias_ip){
+                    if (PteroSyncInstance::get()->use_alias_ip && $newServerAllocation['attributes']['alias'] != '') {
                         $_SERVER_IP = $newServerAllocation['attributes']['alias'];
                     }
                     $_SERVER_PORT = $newServerAllocation['attributes']['port'];
@@ -784,7 +781,7 @@ function pterosync_ChangePackage(array $params)
         foreach ($newServerAllocations as $newServerAllocation) {
             if ($newServerAllocation['attributes']['id'] == $allocation) {
                 $_SERVER_IP = $newServerAllocation['attributes']['ip'];
-                if (PteroSyncInstance::get()->use_alias_ip){
+                if (PteroSyncInstance::get()->use_alias_ip && $newServerAllocation['attributes']['alias'] != '') {
                     $_SERVER_IP = $newServerAllocation['attributes']['alias'];
                 }
                 $_SERVER_PORT = $newServerAllocation['attributes']['port'];
@@ -792,7 +789,6 @@ function pterosync_ChangePackage(array $params)
                 break;
             }
         }
-
 
 
         $nestId = pteroSyncGetOption($params, 'nest_id');
