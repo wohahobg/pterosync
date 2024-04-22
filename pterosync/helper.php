@@ -50,6 +50,7 @@ class PteroSyncInstance
     public array $fetchedResults = [];
     public array $hooksData = [];
     public bool $use_alias_ip = false;
+    public $service_id = 0;
     private array|false $server = false;
 
     public function __construct()
@@ -196,7 +197,7 @@ class PteroSyncInstance
     public function addFileLog($data, $title = 'Log')
     {
         $logDir = __DIR__ . '/log';
-        $file = sprintf('%s/.%s.log', $logDir, date('Y-m-d'));
+        $file = sprintf('%s/.%s-%s.log', $logDir, $this->service_id, date('Y-m-d'));
 
         if (!is_dir($logDir)) {
             mkdir($logDir, 0755, true);
@@ -416,6 +417,19 @@ function pteroSyncGetNodeAllocations($params, $nodePath)
     return false;
 }
 
+function pteroSync_calculatePortRange($serverPortRange, $offset)
+{
+    // Extract the start and end of the SERVER_PORT range
+    [$start, $end] = explode('-', $serverPortRange);
+
+    // Calculate new start and end by adding the offset
+    $newStart = ($start + $offset);
+    $newEnd = $end + $offset;
+
+    // Return the new range as a string
+    return $newStart . '-' . $newEnd;
+}
+
 function pteroSyncProcessAllocations($allocations, $eggData, $ports)
 {
     $variables = [];
@@ -426,6 +440,7 @@ function pteroSyncProcessAllocations($allocations, $eggData, $ports)
             $variables[$var] = $ports[$var];
         }
     }
+
     if (isset($ports['EXTRA_ALLOCATION'])) {
         $extra = $ports['EXTRA_ALLOCATION'];
         $parts = explode(":", $extra);
@@ -567,6 +582,7 @@ function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRang
 
 function pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips)
 {
+
     //check if we need server port offset
     //if so we add it here
     if (PteroSyncInstance::get()->server_port_offset > 0) {
@@ -760,4 +776,31 @@ function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
         default => 'source'
     };
     return [$gameEngine, $address, $port];
+}
+
+function pteroSync_updateServerDomain($serverIp, $serverPort, $params)
+{
+    try {
+        Capsule::table('tblhosting')
+            ->where('id', $params['serviceid'])
+            ->where('userid', $params['userid'])
+            ->update(array('domain' => $serverIp . ":" . $serverPort));
+    } catch (Exception $e) {
+        return $e->getMessage() . "<br />" . $e->getTraceAsString();
+    }
+}
+
+function pteroSync_getServerIPAndPort(&$_SERVER_IP, &$_SERVER_PORT, $newServerAllocations, $allocation)
+{
+    foreach ($newServerAllocations as $newServerAllocation) {
+        if ($newServerAllocation['attributes']['id'] == $allocation) {
+            $_SERVER_IP = $newServerAllocation['attributes']['ip'];
+            if (PteroSyncInstance::get()->use_alias_ip && $newServerAllocation['attributes']['alias'] != '') {
+                $_SERVER_IP = $newServerAllocation['attributes']['alias'];
+            }
+            $_SERVER_PORT = $newServerAllocation['attributes']['port'];
+            $_SERVER_PORT_ID = $newServerAllocation['attributes']['id'];
+            break;
+        }
+    }
 }
