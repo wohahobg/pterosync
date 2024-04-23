@@ -453,7 +453,7 @@ function pterosync_CreateAccount(array $params)
         PteroSyncInstance::get()->server_port_offset = pteroSyncGetOption($params, 'server_port_offset');
 
         $port_range = explode(',', $ports['SERVER_PORT'] ?? '');
-        if (count($port_range) >= 1) {
+        if (count($port_range) == 0) {
             $port_range = [];
         }
         $image = pteroSyncGetOption($params, 'image', $eggData['attributes']['docker_image']);
@@ -603,7 +603,6 @@ function pterosync_CreateAccount(array $params)
             ], 'PATCH');
 
         }
-
 
 
         unset($params['password']);
