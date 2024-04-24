@@ -221,6 +221,10 @@ class PteroSyncInstance
     }
 }
 
+function pteroSyncLog($action, $string, $array)
+{
+    logModuleCall("PteroSync-WHMCS", $action, $string, $array);
+}
 
 function pteroSyncGetHostname(array $params)
 {
@@ -430,7 +434,21 @@ function pteroSync_calculatePortRange($serverPortRange, $offset)
     return $newStart . '-' . $newEnd;
 }
 
-function pteroSyncProcessAllocations($allocations, $eggData, $ports)
+function pteroSyncMakeIParray($allocations)
+{
+    $ips = [];
+    foreach ($allocations as $allocation) {
+        $attr = $allocation['attributes'];
+        $ip = $attr['ip'];
+        $ips[$ip][] = [
+            'port' => $attr['port'],
+            'id' => $attr['id']
+        ];
+    }
+    return $ips;
+}
+
+function pteroSyncProcessAllocations($eggData, $ports, $_SERVER_PORT)
 {
     $variables = [];
     foreach ($eggData['attributes']['relationships']['variables']['data'] as $val) {
@@ -439,6 +457,11 @@ function pteroSyncProcessAllocations($allocations, $eggData, $ports)
         if (isset($ports[$var])) {
             $variables[$var] = $ports[$var];
         }
+    }
+
+    if (PteroSyncInstance::get()->server_port_offset > 0) {
+        $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
+        $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
     }
 
     if (isset($ports['EXTRA_ALLOCATION'])) {
@@ -461,18 +484,7 @@ function pteroSyncProcessAllocations($allocations, $eggData, $ports)
             $variables['EXTRA_ALLOCATION' . $i] = $modifiedString;
         }
     }
-
-    $ips = [];
-    foreach ($allocations as $allocation) {
-        $attr = $allocation['attributes'];
-        $ip = $attr['ip'];
-        $ips[$ip][] = [
-            'port' => $attr['port'],
-            'id' => $attr['id']
-        ];
-    }
-
-    return [$variables, $ips];
+    return $variables;
 }
 
 function pteroSyncfindFreePortsForVariables($ips_data, &$variables)

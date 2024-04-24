@@ -517,13 +517,19 @@ function pterosync_CreateAccount(array $params)
         $nodeAllocations = [];
         if ($ports) {
             $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
+            $variables = pteroSyncProcessAllocations($eggData, $ports, $_SERVER_PORT);
         }
-        while ($nodeAllocations && PteroSyncInstance::get()->fetching) {
-            [$variables, $ips] = pteroSyncProcessAllocations($nodeAllocations, $eggData, $ports);
-            if (!$variables) {
-                PteroSyncInstance::get()->fetching = false;
-                break;
-            }
+
+        if (!$variables){
+            pteroSyncLog('VARIABLES', 'No variables founds.', $ports);
+        }
+
+        if (!$nodeAllocations){
+            pteroSyncLog('NODE ALLOCATIONS', 'Node allocations not found..', [$node_path]);
+        }
+
+        while ($variables && $nodeAllocations && PteroSyncInstance::get()->fetching) {
+            $ips = pteroSyncMakeIParray($nodeAllocations);
             $foundPorts = pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips);
             if ($foundPorts) {
                 break;
@@ -531,6 +537,7 @@ function pterosync_CreateAccount(array $params)
                 $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
             }
         }
+
 
         if ($variables && !$foundPorts) {
             //here we need to fetch more ?
