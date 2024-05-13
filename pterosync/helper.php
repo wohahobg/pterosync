@@ -273,10 +273,13 @@ function pteroSyncApiHandler(mixed $method, array $data, CurlHandle|false $curl,
     return $responseData;
 }
 
-function pteroSyncApplicationApi(array $params, $endpoint, array $data = [], $method = "GET", $dontLog = false)
+/**
+ * @param string $url
+ * @param mixed $method
+ * @return CurlHandle|false
+ */
+function getCurl_init(string $url, mixed $method): false|CurlHandle
 {
-    $url = pteroSyncGetHostname($params) . '/api/application/' . $endpoint;
-
     $curl = curl_init();
     curl_setopt($curl, CURLOPT_URL, $url);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
@@ -286,6 +289,14 @@ function pteroSyncApplicationApi(array $params, $endpoint, array $data = [], $me
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
     curl_setopt($curl, CURLOPT_TIMEOUT, 5);
+    return $curl;
+}
+
+function pteroSyncApplicationApi(array $params, $endpoint, array $data = [], $method = "GET", $dontLog = false)
+{
+    $url = pteroSyncGetHostname($params) . '/api/application/' . $endpoint;
+
+    $curl = getCurl_init($url, $method);
 
     $headers = [
         "Authorization: Bearer " . $params['serverpassword'],
@@ -295,18 +306,11 @@ function pteroSyncApplicationApi(array $params, $endpoint, array $data = [], $me
     return pteroSyncApiHandler($method, $data, $curl, $headers, $dontLog, $url);
 }
 
+
 function pteroSyncClientApi(array $params, $endPoint, array $data = [], $method = "GET", $dontLog = false)
 {
     $url = pteroSyncGetHostname($params) . '/api/client/' . $endPoint;
-    $curl = curl_init();
-    curl_setopt($curl, CURLOPT_URL, $url);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
-    curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-    curl_setopt($curl, CURLOPT_USERAGENT, PteroSyncInstance::get()->panelCurlConfig['user'] . "-WHMCS");
-    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
-    curl_setopt($curl, CURLOPT_TIMEOUT, 5);
+    $curl = getCurl_init($url, $method);
 
     $headers = [
         "Authorization: Bearer " . $params['serveraccesshash'],
@@ -407,14 +411,15 @@ function pteroSyncGetNodeAllocations($params, $nodePath)
     if ($nodeAllocations['status_code'] == 200 && !empty($nodeAllocations['data'])) {
 
         $PteroSyncSettings->fetchedResults = array_merge($PteroSyncSettings->fetchedResults ?? [], $nodeAllocations['data']);
+        $PteroSyncSettings->fetching = true;
 
-        if (!empty($nodeAllocations['meta']['pagination']['links']['next'])) {
-            $PteroSyncSettings->fetchingNextPage = $currentPage + 1;
-            $PteroSyncSettings->fetching = true;
-        } else {
+        if (empty($nodeAllocations['meta']['pagination']['links']['next'])) {
             $PteroSyncSettings->fetchingNextPage = 1;
             $PteroSyncSettings->fetching = false;
+        } else {
+            $PteroSyncSettings->fetchingNextPage = $currentPage + 1;
         }
+
         return $PteroSyncSettings->fetchedResults;
     }
 
