@@ -762,22 +762,14 @@ function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
     if (!PteroSyncInstance::get()->show_server_information || $hide_server_status === "on") {
         return [false, false, false];
     }
-
-    $address = '';
     $environment = $server['container']['environment'];
     $useQueryPort = isset($environment['QUERY_PORT']);
+    $allocations = $server['relationships']['allocations']['data'];
+    $address = '';
+    $port = '';
+    pteroSync_getServerIPAndPort($address, $port, $allocations, $server['allocation']);
     if ($useQueryPort) {
         $port = $environment['QUERY_PORT'];
-    }
-    $allocations = $server['relationships']['allocations']['data'];
-    foreach ($allocations as $allocation) {
-        if ($allocation['attributes']['id'] == $server['allocation']) {
-            $address = $allocation['attributes']['ip'];
-            if (!$useQueryPort) {
-                $port = $allocation['attributes']['port'];
-            }
-            break;
-        }
     }
     $nestName = strtolower($server['relationships']['nest']['attributes']['name']);
     $nestName = explode(' ', $nestName);
@@ -807,16 +799,15 @@ function pteroSync_updateServerDomain($serverIp, $serverPort, $params)
     }
 }
 
-function pteroSync_getServerIPAndPort(&$_SERVER_IP, &$_SERVER_PORT, $newServerAllocations, $allocation)
+function pteroSync_getServerIPAndPort(&$_SERVER_IP, &$_SERVER_PORT, $allocations, $allocation)
 {
-    foreach ($newServerAllocations as $newServerAllocation) {
-        if ($newServerAllocation['attributes']['id'] == $allocation) {
-            $_SERVER_IP = $newServerAllocation['attributes']['ip'];
-            if (PteroSyncInstance::get()->use_alias_ip && $newServerAllocation['attributes']['alias'] != '') {
-                $_SERVER_IP = $newServerAllocation['attributes']['alias'];
+    foreach ($allocations as $allocationData) {
+        if ($allocationData['attributes']['id'] == $allocation) {
+            $_SERVER_IP = $allocationData['attributes']['ip'];
+            if (PteroSyncInstance::get()->use_alias_ip && $allocationData['attributes']['alias'] != '') {
+                $_SERVER_IP = $allocationData['attributes']['alias'];
             }
-            $_SERVER_PORT = $newServerAllocation['attributes']['port'];
-            $_SERVER_PORT_ID = $newServerAllocation['attributes']['id'];
+            $_SERVER_PORT = $allocationData['attributes']['port'];
             break;
         }
     }

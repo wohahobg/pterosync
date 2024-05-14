@@ -658,13 +658,6 @@ function pterosync_TerminateAccount(array $params)
         return $err->getMessage();
     }
 
-    // Remove the "Dedicated IP" Field on Termination
-    try {
-        $query = Capsule::table('tblhosting')->where('id', $params['serviceid'])->where('userid', $params['userid'])->update(array('domain' => ""));
-    } catch (Exception $e) {
-        return $e->getMessage() . "<br />" . $e->getTraceAsString();
-    }
-
     return 'success';
 }
 
@@ -876,8 +869,8 @@ function pterosync_ClientArea(array $params)
                 'serverFound' => false
             ],
         ];
+        [$game, $address, $queryPort] = pteroSyncGenerateServerStatusArray($serverData, $hide_server_status);
 
-        [$game, $address, $port] = pteroSyncGenerateServerStatusArray($serverData, $hide_server_status);
 
         $endpoint = 'servers/' . $serverData['identifier'] . '/resources';
         $serverState = pteroSyncClientApi($params, $endpoint);
@@ -902,9 +895,21 @@ function pterosync_ClientArea(array $params)
 
             pteroSyncreturnJsonMessage('ACTON_NOT_FOUND');
         }
+
+
         $actionUrl = "https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         $userAttributes = $serverData['relationships']['user']['attributes'];
         $nodeAttributes = $serverData['relationships']['node']['attributes'];
+        $serverIp = $params['domain'];
+
+        if ($address !== false) {
+            $parts = explode(':', $params['domain']);
+            $serverIp = $address;
+            if (isset($parts[1])) {
+                $serverIp = $address . ':' . $parts[1];
+            }
+        }
+
         return [
             'templatefile' => 'clientarea',
             'vars' => [
@@ -915,7 +920,7 @@ function pterosync_ClientArea(array $params)
                 'rebootUrl' => $actionUrl . '&modop=custom&a=restartServer',
                 'stopUrl' => $actionUrl . '&modop=custom&a=stopServer',
                 'killUrl' => $actionUrl . '&modop=custom&a=killServer',
-                'serverIp' => $params['domain'],
+                'serverIp' => $serverIp,
                 'serverId' => $serverId,
                 'ftpDetails' => [
                     'username' => $userAttributes['username'] . '.' . $serverData['identifier'],
@@ -927,7 +932,7 @@ function pterosync_ClientArea(array $params)
                 'gameQueryData' => [
                     'game' => $game,
                     'address' => $address,
-                    'port' => $port,
+                    'port' => $queryPort,
                 ]
             ],
         ];
