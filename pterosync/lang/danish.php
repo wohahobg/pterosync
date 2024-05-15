@@ -1,7 +1,7 @@
 <?php
 /**
  * WHMCS Language File
- * English (en)
+ * Danish (da)
  *
  * Please Note: These language files are overwritten during software updates
  * and therefore editing of these files directly is not advised. Instead we
