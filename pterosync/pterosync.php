@@ -541,6 +541,13 @@ function pterosync_CreateAccount(array $params)
             }
         }
 
+        if (!$foundPorts && $variables && $nodeAllocations) {
+            pteroSyncLog('Ports not founds', 'Ports not founds.', [
+                'results' => PteroSyncInstance::get()->fetchedResults,
+                'variables' => $variables
+            ]);
+        }
+
         if ($foundPorts) {
             $allocationArray['allocation'] = $_SERVER_PORT_ID;
             //if we have set SERVER_PORT that mean we have new server port and we need to remove the given allocation and add new allocation.

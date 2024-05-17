@@ -146,7 +146,7 @@ class PteroSyncInstance
         $arr = array_merge($defaultAttributes, $column);
 
         $updateResult = pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], $arr, 'PATCH');
-        if ($updateResult['status_code'] !== 200) throw new Exception('Failed to change ' . $column . ', received error code: ' . $updateResult['status_code'] . '.');
+        if ($updateResult['status_code'] !== 200) throw new Exception('Failed to change ' . print_r($column, true) . ', received error code: ' . $updateResult['status_code'] . '.');
     }
 
     public function getPterodactylUser($params, array $client = [], $create = true)
@@ -162,32 +162,31 @@ class PteroSyncInstance
             }
 
             if ($create === true && $userResult['meta']['pagination']['total'] === 0) {
-                $arr = [
-                    'username' => $client['username'],
-                    'email' => $client['email'],
-                    'first_name' => $client['firstname'],
-                    'last_name' => $client['lastname'],
-                    'external_id' => (string)$client['id'],
-                ];
-                if (isset($client['password'])) {
-                    $arr['password'] = $client['password'];
-                }
-                $userResult = pteroSyncApplicationApi($params, 'users', $arr, 'POST');
+                $userResult = $this->createPteroUser($client, $params);
             } else {
-                foreach ($userResult['data'] as $key => $value) {
-                    if ($value['attributes']['email'] == $client['email']) {
-                        $userResult = $value;
-                        $userResult['status_code'] = 200;
-                        //Let's update the external_id to match the actual client id.
-                        $arr['external_id'] = (string)$client['id'];
-                        if (isset($client['password'])) {
-                            $arr['password'] = $client['password'];
+                if ($userResult['meta']['pagination']['total'] === 0){
+                    $userResult['status_code'] = 404;
+                }
+                if ($userResult['status_code'] !== 404){
+                    foreach ($userResult['data'] as $key => $value) {
+                        if ($value['attributes']['email'] == $client['email']) {
+                            $userResult = $value;
+                            $userResult['status_code'] = 200;
+                            //Let's update the external_id to match the actual client id.
+                            $arr['external_id'] = (string)$client['id'];
+                            if (isset($client['password'])) {
+                                $arr['password'] = $client['password'];
+                            }
+                            $this->updatePterodactylUserData($userResult, $params, $arr);
+                            break;
                         }
-                        $this->updatePterodactylUserData($userResult, $params, $arr);
-
-                        break;
                     }
                 }
+
+                if ($userResult['status_code'] === 404){
+                    $userResult = $this->createPteroUser($client, $params);
+                }
+
             }
         }
         return $userResult;
@@ -218,6 +217,27 @@ class PteroSyncInstance
     public function getDynamicEnvironmentArray(): array
     {
         return $this->dynamic_environment_array;
+    }
+
+    /**
+     * @param array $client
+     * @param array $arr
+     * @param $params
+     * @return mixed
+     */
+    private function createPteroUser(array $client, $params): mixed
+    {
+        $arr = [
+            'username' => $client['username'],
+            'email' => $client['email'],
+            'first_name' => $client['firstname'],
+            'last_name' => $client['lastname'],
+            'external_id' => (string)$client['id'],
+        ];
+        if (isset($client['password'])) {
+            $arr['password'] = $client['password'];
+        }
+        return pteroSyncApplicationApi($params, 'users', $arr, 'POST');
     }
 }
 

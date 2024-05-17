@@ -50,8 +50,7 @@ add_hook('ClientAreaHeadOutput', 1, function ($params) {
     return $urls;
 });
 
-add_hook('ClientAreaPrimarySidebar', 1, function(\WHMCS\View\Menu\Item $primarySidebar)
-{
+add_hook('ClientAreaPrimarySidebar', 1, function (\WHMCS\View\Menu\Item $primarySidebar) {
     $ActionDetails = $primarySidebar->getChild("Service Details Actions");
     if (empty($ActionDetails)) {
         return;
@@ -60,7 +59,7 @@ add_hook('ClientAreaPrimarySidebar', 1, function(\WHMCS\View\Menu\Item $primaryS
 
     $ActionDetailsChildren = $ActionDetails->getChildren();
     $kidsToIcon = ["Change Password"];
-    foreach($ActionDetailsChildren as $key => $Action_details_child) {
+    foreach ($ActionDetailsChildren as $key => $Action_details_child) {
         if (in_array($key, $kidsToIcon)) {
             $ActionDetails->removeChild($key);
         }
@@ -91,11 +90,18 @@ add_hook('ClientEdit', 1, function ($client) {
 
     if (PteroSyncInstance::get()->enable_whmcs_user_sync !== true) return;
 
-    $oldClient['id'] = $client['client_id'];
+    $oldClient['id'] = $client['olddata']['client_id'];
     $oldClient['email'] = $client['olddata']['email'];
-    $params = PteroSyncInstance::get()->getServer();
+    $oldClient['firstname'] = $client['olddata']['firstname'];
+    $oldClient['lastname'] = $client['olddata']['lastname'];
 
+    //just to be save let's add random username
+    //in case the user does not exist and need to be created new one.
+    $oldClient['username'] = pteroSyncGenerateUsername();
+
+    $params = PteroSyncInstance::get()->getServer();
     $userResult = PteroSyncInstance::get()->getPterodactylUser($params, $oldClient, false);
+
     if ($userResult['status_code'] !== 404) {
         $newData = [
             'username' => $userResult['attributes']['username'],
@@ -133,7 +139,7 @@ add_hook('ClientClose', 1, function ($vars) {
     ], false);
 
     if ($userResult !== 404) {
-     //   pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], [], 'DELETE');
+        //   pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], [], 'DELETE');
     }
 });
 
