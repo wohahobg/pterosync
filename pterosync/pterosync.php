@@ -401,6 +401,9 @@ function pterosync_CreateAccount(array $params)
         ]);
 
         if ($userResult['status_code'] === 200 || $userResult['status_code'] === 201) {
+            if (!isset($userResult['attributes']['id'])) {
+                throw new Exception("Failed to get the client pterodactyl's account.Enable module debug log for more info.");
+            }
             $userId = $userResult['attributes']['id'];
         } else {
             throw new Exception('Failed to create user, received error code: ' . $userResult['status_code'] . '. Enable module debug log for more info.');
