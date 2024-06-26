@@ -381,13 +381,19 @@ function pterosync_CreateAccount(array $params)
 {
 
     try {
-
         PteroSyncInstance::get()->service_id = $params['serviceid'];
-        $ports = pteroSyncGetOption($params, 'ports_ranges');
-        $ports = json_decode($ports, true);
-        if (!empty($ports) && !is_array($ports)) {
-            throw new Exception('Failed to create server because ports is not in valid json format.');
+        $portsJson = pteroSyncGetOption($params, 'ports_ranges');
+        $portsArray = [];
+        if ($portsJson !== '') {
+            $pattern = '/^(\d+-\d+)(,\d+-\d+)*$/';
+            if (!preg_match_all($pattern, $portsJson, $matches)) {
+                $portsArray = json_decode($portsJson, true);
+                if (!is_array($portsArray)) {
+                    throw new Exception('Failed to create server because ports is not in valid JSON format.');
+                }
+            }
         }
+
         $serverId = pteroSyncGetServer($params);
         if ($serverId) throw new Exception('Failed to create server because it is already created.');
         $customFieldId = pteroSyncGetCustomFiledId($params);
@@ -455,10 +461,13 @@ function pterosync_CreateAccount(array $params)
 
         PteroSyncInstance::get()->server_port_offset = pteroSyncGetOption($params, 'server_port_offset');
 
-        $port_range = explode(',', $ports['SERVER_PORT'] ?? '');
-        if (count($port_range) == 0) {
-            $port_range = [];
+
+        if ($portsArray){
+            $port_range = isset($portsArray['SERVER_PORT']) ? explode(',', $portsArray['SERVER_PORT']) : [];
+        }else{
+            $port_range = isset($portsJson) ? explode(',', $portsJson) : [];
         }
+
         $image = pteroSyncGetOption($params, 'image', $eggData['attributes']['docker_image']);
         $startup = pteroSyncGetOption($params, 'startup', $eggData['attributes']['startup']);
         $databases = pteroSyncGetOption($params, 'databases');
@@ -518,13 +527,13 @@ function pterosync_CreateAccount(array $params)
         $variables = [];
         $ips = [];
         $nodeAllocations = [];
-        if ($ports) {
+        if ($portsArray) {
             $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
-            $variables = pteroSyncProcessAllocations($eggData, $ports, $_SERVER_PORT);
+            $variables = pteroSyncProcessAllocations($eggData, $portsArray, $_SERVER_PORT);
         }
 
         if (!$variables) {
-            pteroSyncLog('VARIABLES', 'No variables founds.', $ports);
+            pteroSyncLog('VARIABLES', 'No variables founds.', $portsArray);
         }
 
         if (!$nodeAllocations) {
@@ -533,7 +542,7 @@ function pterosync_CreateAccount(array $params)
 
         while ($variables && $nodeAllocations) {
             $ips = pteroSyncMakeIParray($nodeAllocations);
-            $foundPorts = pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips);
+            $foundPorts = pteroSyncfindPorts($portsArray, $_SERVER_PORT, $_SERVER_IP, $variables, $ips);
             if ($foundPorts) {
                 break;
             }

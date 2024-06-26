@@ -135,7 +135,7 @@ class PteroSyncInstance
         if ($updateResult['status_code'] !== 200) throw new Exception('Failed to change password, received error code: ' . $updateResult['status_code'] . '.');
     }
 
-    public function updatePterodactylUserData($userResult, $params, $column)
+    public function updatePterodactylUserData($userResult, $params, $column): void
     {
         $defaultAttributes = [
             'username' => $userResult['attributes']['username'],
