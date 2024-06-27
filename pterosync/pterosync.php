@@ -383,6 +383,7 @@ function pterosync_CreateAccount(array $params)
     try {
         PteroSyncInstance::get()->service_id = $params['serviceid'];
         $portsJson = pteroSyncGetOption($params, 'ports_ranges');
+        $portsJson = trim($portsJson);
         $portsArray = [];
         if ($portsJson !== '') {
             $pattern = '/^(\d+-\d+)(,\d+-\d+)*$/';
@@ -461,11 +462,10 @@ function pterosync_CreateAccount(array $params)
 
         PteroSyncInstance::get()->server_port_offset = pteroSyncGetOption($params, 'server_port_offset');
 
-
         if ($portsArray){
             $port_range = isset($portsArray['SERVER_PORT']) ? explode(',', $portsArray['SERVER_PORT']) : [];
         }else{
-            $port_range = isset($portsJson) ? explode(',', $portsJson) : [];
+            $port_range = !empty($portsJson) ? explode(',', $portsJson) : [];
         }
 
         $image = pteroSyncGetOption($params, 'image', $eggData['attributes']['docker_image']);
