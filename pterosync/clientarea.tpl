@@ -85,7 +85,7 @@
                             <input type="text" class="form-control copy-text"
                                    data-id="ftpHost"
                                    data-new-text="{$LANG.SERVER_FTP_HOST_COPIED}"
-                                   data-clipboard-text="{$ftpDetails['username']}"
+                                   data-clipboard-text="{$ftpDetails['host']}"
                                    id="ftpHost"
                                    value="{$ftpDetails['host']}" readonly>
                         </div>
