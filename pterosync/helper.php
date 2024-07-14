@@ -807,9 +807,12 @@ function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
     return [$gameEngine, $address, $port];
 }
 
-function pteroSync_updateServerDomain($serverIp, $serverPort, $params)
+function pteroSync_updateServerDomain($serverIp, $serverPort,$serverAliasIp, $params)
 {
     try {
+        if ($serverAliasIp !== false){
+            $serverIp = $serverAliasIp;
+        }
         Capsule::table('tblhosting')
             ->where('id', $params['serviceid'])
             ->where('userid', $params['userid'])
@@ -819,13 +822,14 @@ function pteroSync_updateServerDomain($serverIp, $serverPort, $params)
     }
 }
 
-function pteroSync_getServerIPAndPort(&$_SERVER_IP, &$_SERVER_PORT, $allocations, $allocation)
+function pteroSync_getServerIPAndPort(&$_SERVER_IP, &$_SERVER_PORT, &$_SERVER_ALIAS_IP, $allocations, $allocation)
 {
+    $_SERVER_ALIAS_IP = false;
     foreach ($allocations as $allocationData) {
         if ($allocationData['attributes']['id'] == $allocation) {
             $_SERVER_IP = $allocationData['attributes']['ip'];
             if (PteroSyncInstance::get()->use_alias_ip && $allocationData['attributes']['alias'] != '') {
-                $_SERVER_IP = $allocationData['attributes']['alias'];
+                $_SERVER_ALIAS_IP = $allocationData['attributes']['alias'];
             }
             $_SERVER_PORT = $allocationData['attributes']['port'];
             break;

@@ -157,7 +157,7 @@ function pterosync_ConfigOptions()
         ],
         "disk" => [
             "FriendlyName" => $diskTitle,
-            "Description" => pterosyncAddHelpTooltip($diskDescription, 'dick'),
+            "Description" => pterosyncAddHelpTooltip($diskDescription, 'disk'),
             "Type" => "text",
             "Size" => 25,
             "Default" => $diskDefault,
@@ -462,9 +462,9 @@ function pterosync_CreateAccount(array $params)
 
         PteroSyncInstance::get()->server_port_offset = pteroSyncGetOption($params, 'server_port_offset');
 
-        if ($portsArray){
+        if ($portsArray) {
             $port_range = isset($portsArray['SERVER_PORT']) ? explode(',', $portsArray['SERVER_PORT']) : [];
-        }else{
+        } else {
             $port_range = !empty($portsJson) ? explode(',', $portsJson) : [];
         }
 
@@ -486,6 +486,7 @@ function pterosync_CreateAccount(array $params)
             'oom_disabled' => $oom_disabled,
             'limits' => [
                 'memory' => (int)$memory,
+                'threads' => '0-1,3',
                 'swap' => (int)$swap,
                 'io' => (int)$io,
                 'cpu' => (int)$cpu,
@@ -516,9 +517,10 @@ function pterosync_CreateAccount(array $params)
         $_SERVER_ID = $server['attributes']['uuid'];
         $_SERVER_IP = '';
         $_SERVER_PORT = '';
+        $_SERVER_ALIAS_IP = false;
         $serverAllocations = $server['attributes']['relationships']['allocations']['data'];
         $allocation = $server['attributes']['allocation'];
-        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT, $serverAllocations, $allocation);
+        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $serverAllocations, $allocation);
         $_SERVER_PORT_ID = $serverAllocations[0]['attributes']['id'];
 
         $serverNode = $server['attributes']['node'];
@@ -608,8 +610,8 @@ function pterosync_CreateAccount(array $params)
 
 
             $allocation = $updateResult['attributes']['allocation'];
-            $newServerAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
-            pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT, $newServerAllocations, $allocation);
+            $serverAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
+            pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $serverAllocations, $allocation);
             pteroSyncApplicationApi($params, 'servers/' . $serverId . '/startup', [
                 'startup' => $server['attributes']['container']['environment']['STARTUP'],
                 'egg' => $server['attributes']['egg'],
@@ -622,7 +624,7 @@ function pterosync_CreateAccount(array $params)
 
 
         unset($params['password']);
-        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT, $params);
+        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $params);
         pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
         Capsule::table('tblhosting')->where('id', $params['serviceid'])->update([
             'username' => '',
@@ -756,10 +758,11 @@ function pterosync_ChangePackage(array $params)
         $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', $updateData, 'PATCH');
         if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
         $allocation = $updateResult['attributes']['allocation'];
-        $newServerAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
+        $serverAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
         $_SERVER_IP = '';
         $_SERVER_PORT = '';
-        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT, $newServerAllocations, $allocation);
+        $_SERVER_ALIAS_IP = false;
+        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $serverAllocations, $allocation);
 
         $nestId = pteroSyncGetOption($params, 'nest_id');
         $eggId = pteroSyncGetOption($params, 'egg_id');
@@ -803,7 +806,7 @@ function pterosync_ChangePackage(array $params)
         $_SERVER_ID = $serverData['uuid'];
         $customFieldId = pteroSyncGetCustomFiledId($params);
 
-        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT, $params);
+        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $params);
         pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
     } catch (Exception $err) {
         return $err->getMessage();
