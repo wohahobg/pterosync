@@ -787,7 +787,7 @@ function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
     $allocations = $server['relationships']['allocations']['data'];
     $address = '';
     $port = '';
-    pteroSync_getServerIPAndPort($address, $port, $allocations, $server['allocation']);
+    pteroSync_getServerIPAndPort($address, $port,$address, $allocations, $server['allocation']);
     if ($useQueryPort) {
         $port = $environment['QUERY_PORT'];
     }
