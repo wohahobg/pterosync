@@ -486,7 +486,7 @@ function pterosync_CreateAccount(array $params)
             'oom_disabled' => $oom_disabled,
             'limits' => [
                 'memory' => (int)$memory,
-                'threads' => '0-1,3',
+                //'threads' => '0-1,3',
                 'swap' => (int)$swap,
                 'io' => (int)$io,
                 'cpu' => (int)$cpu,
