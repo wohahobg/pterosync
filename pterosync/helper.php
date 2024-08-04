@@ -51,6 +51,10 @@ class PteroSyncInstance
     public array $hooksData = [];
     public bool $use_alias_ip = false;
     public $service_id = 0;
+    /**
+     * @var false|mixed
+     */
+    public $dedicated_ip = false;
     private array|false $server = false;
 
     public function __construct()
@@ -164,12 +168,12 @@ class PteroSyncInstance
             if ($create === true && $userResult['meta']['pagination']['total'] === 0) {
                 $userResult = $this->createPteroUser($client, $params);
             } else {
-                if ($userResult['meta']['pagination']['total'] === 0){
+                if ($userResult['meta']['pagination']['total'] === 0) {
                     $userResult['status_code'] = 404;
                 }
-                if ($userResult['status_code'] !== 404){
+                if ($userResult['status_code'] !== 404) {
                     foreach ($userResult['data'] as $key => $value) {
-                        if ($value['attributes']['email'] == $client['email']) {
+                        if (strtolower($value['attributes']['email']) == strtolower($client['email'])) {
                             $userResult = $value;
                             $userResult['status_code'] = 200;
                             //Let's update the external_id to match the actual client id.
@@ -183,7 +187,7 @@ class PteroSyncInstance
                     }
                 }
 
-                if ($userResult['status_code'] === 404){
+                if ($userResult['status_code'] === 404) {
                     $userResult = $this->createPteroUser($client, $params);
                 }
 
@@ -413,14 +417,29 @@ function pteroSyncConvertToMB($input)
     return $input * 1024;
 }
 
-function pteroSyncGetNodeAllocations($params, $nodePath)
+function pteroSyncGetNodeAllocations($params, $serverNode)
 {
 
+    $node = [];
+    $allocations = [];
+    $nodes = pteroSyncApplicationApi($params, 'nodes?include=allocations');
+    if ($nodes) {
+        foreach ($nodes['data'] as $nodeData) {
+            $node = $nodeData['attributes'];
+            if ($node['id'] == $serverNode) {
+                $allocations = $node['relationships']['allocations']['data'];
+                break;
+            }
+        }
+    }
+    return [$node, $allocations];
+
+    die;
     $perPage = 200;
     $PteroSyncSettings = PteroSyncInstance::get();
     $currentPage = $PteroSyncSettings->fetchingNextPage;
     $path = sprintf(
-        '%s?per_page=%d&page=%d&filter[server_id]=0',
+        '%s?per_page=%d&page=%d',
         $nodePath,
         $perPage,
         $currentPage
@@ -462,11 +481,35 @@ function pteroSync_calculatePortRange($serverPortRange, $offset)
 function pteroSyncMakeIParray($allocations)
 {
     $ips = [];
+    if (PteroSyncInstance::get()->dedicated_ip) {
+        // Array to store IPs to be removed
+        $ipsToRemove = [];
+
+        // First pass to identify all IPs with assigned ports
+        foreach ($allocations as $allocation) {
+            $attr = $allocation['attributes'];
+            if ($attr['assigned'] == 1) {
+                $ipsToRemove[] = $attr['ip'];
+            }
+        }
+
+        // Second pass to filter out allocations with IPs that should be removed
+        $allocations = array_filter($allocations, function($allocation) use ($ipsToRemove) {
+            return !in_array($allocation['attributes']['ip'], $ipsToRemove);
+        });
+
+        // Optional: Reindex the array to have consecutive keys
+        $allocations = array_values($allocations);
+
+        // Now $allocations contains only the entries without any IPs that have assigned ports
+    }
+
     foreach ($allocations as $allocation) {
         $attr = $allocation['attributes'];
         $ip = $attr['ip'];
         $ips[$ip][] = [
             'port' => $attr['port'],
+            'assigned' => $attr['assigned'],
             'id' => $attr['id']
         ];
     }
@@ -787,7 +830,7 @@ function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
     $allocations = $server['relationships']['allocations']['data'];
     $address = '';
     $port = '';
-    pteroSync_getServerIPAndPort($address, $port,$address, $allocations, $server['allocation']);
+    pteroSync_getServerIPAndPort($address, $port, $address, $allocations, $server['allocation']);
     if ($useQueryPort) {
         $port = $environment['QUERY_PORT'];
     }
@@ -807,10 +850,10 @@ function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
     return [$gameEngine, $address, $port];
 }
 
-function pteroSync_updateServerDomain($serverIp, $serverPort,$serverAliasIp, $params)
+function pteroSync_updateServerDomain($serverIp, $serverPort, $serverAliasIp, $params)
 {
     try {
-        if ($serverAliasIp !== false){
+        if ($serverAliasIp !== false) {
             $serverIp = $serverAliasIp;
         }
         Capsule::table('tblhosting')

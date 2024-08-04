@@ -1,4 +1,7 @@
 <?php
+//TODO handle when egg_id and nest_id is changed
+//TODO make it optional to reinstall the server when egg_id or nest_id is changed or both.
+
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
@@ -121,8 +124,9 @@ function pterosync_ConfigKeys()
         "ports_ranges" => "Ports Ranges",
         "default_variables" => "Default Variables",
         'server_port_offset' => "Server Port Offset",
-        "split_limit" => "Split Limit",
-        "hide_server_status" => "Hide Server Status"
+        "feature_limits" => "Feature Limits",
+        "hide_server_status" => "Hide Server Status",
+        'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4."
     ];
 
 }
@@ -293,9 +297,9 @@ function pterosync_ConfigOptions()
             "Size" => 25,
             'SimpleMode' => true,
         ],
-        "split_limit" => [
-            'FriendlyName' => "Split Limit",
-            "Description" => pterosyncAddHelpTooltip("Adjust the number of allowed splits effortlessly. Just set the desired maximum number of server splits.", 'split_limit'),
+        "feature_limits" => [
+            'FriendlyName' => "Feature Limits",
+            "Description" => pterosyncAddHelpTooltip("Feature limits are ideal for overriding add-ons that are integrated into your Pterodactyl panel. Ensure that the input is valid JSON. For more information, please refer to our Wiki page.", 'feature_limits'),
             "Type" => "text",
             "default" => '0',
             "Size" => 25,
@@ -306,6 +310,15 @@ function pterosync_ConfigOptions()
             "Description" => "Check to disable server status on client product page.",
             "Type" => "yesno",
             "Size" => 25,
+            'SimpleMode' => true,
+        ],
+        //        'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4."
+        "threads" => [
+            'FriendlyName' => "CPU Pinning",
+            "Description" => pterosyncAddHelpTooltip("Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4.", 'threads'),
+            "Type" => "text",
+            "Size" => 25,
+            "default" => null,
             'SimpleMode' => true,
         ]
     ];
@@ -358,8 +371,7 @@ function pterosync_TestConnection(array $params)
 
         if ($response['status_code'] !== 200) {
             $status_code = $response['status_code'];
-            $err = "Invalid status_code received: " . $status_code . ". Possible solutions: "
-                . (isset($solutions[$status_code]) ? $solutions[$status_code] : "None.");
+            $err = "Invalid status_code received: " . $status_code . ". Possible solutions: " . $solutions[$status_code] ?? "None.";
         } else {
             if ($response['meta']['pagination']['count'] === 0) {
                 $err = "Authentication successful, but no nodes are available.";
@@ -459,6 +471,7 @@ function pterosync_CreateAccount(array $params)
 
         $location_id = pteroSyncGetOption($params, 'location_id');
         $dedicated_ip = (bool)pteroSyncGetOption($params, 'dedicated_ip');
+        PteroSyncInstance::get()->dedicated_ip = $dedicated_ip;
 
         PteroSyncInstance::get()->server_port_offset = pteroSyncGetOption($params, 'server_port_offset');
 
@@ -474,8 +487,8 @@ function pterosync_CreateAccount(array $params)
         $maximumAllocations = pteroSyncGetOption($params, 'allocations');
         $backups = pteroSyncGetOption($params, 'backups');
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
-        $split_limit = pteroSyncGetOption($params, 'split_limit');
 
+        $threads = pteroSyncGetOption($params,'threads');
         $serverData = [
             'name' => $name,
             'user' => (int)$userId,
@@ -486,17 +499,16 @@ function pterosync_CreateAccount(array $params)
             'oom_disabled' => $oom_disabled,
             'limits' => [
                 'memory' => (int)$memory,
-                //'threads' => '0-1,3',
                 'swap' => (int)$swap,
                 'io' => (int)$io,
                 'cpu' => (int)$cpu,
                 'disk' => (int)$disk,
+                'threads' => (string)$threads,
             ],
             'feature_limits' => [
                 'databases' => $databases ? (int)$databases : null,
                 'allocations' => (int)$maximumAllocations,
                 'backups' => (int)$backups,
-                'split_limit' => (int)$split_limit,
             ],
             'deploy' => [
                 'locations' => [(int)$location_id],
@@ -507,6 +519,12 @@ function pterosync_CreateAccount(array $params)
             'start_on_completion' => true,
             'external_id' => (string)$params['serviceid'],
         ];
+
+        $feature_limits = pteroSyncGetOption($params, 'feature_limits');
+        $feature_limits = json_decode($feature_limits, true);
+        if ($feature_limits) {
+            $serverData['feature_limits'] = array_merge($serverData['feature_limits'], $feature_limits);
+        }
 
         $server = pteroSyncApplicationApi($params, 'servers?include=allocations', $serverData, 'POST');
 
@@ -520,18 +538,19 @@ function pterosync_CreateAccount(array $params)
         $_SERVER_ALIAS_IP = false;
         $serverAllocations = $server['attributes']['relationships']['allocations']['data'];
         $allocation = $server['attributes']['allocation'];
-        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $serverAllocations, $allocation);
+        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT, $_SERVER_ALIAS_IP, $serverAllocations, $allocation);
         $_SERVER_PORT_ID = $serverAllocations[0]['attributes']['id'];
 
         $serverNode = $server['attributes']['node'];
         $node_path = 'nodes/' . $serverNode . '/allocations';
         $foundPorts = [];
         $variables = [];
-        $ips = [];
         $nodeAllocations = [];
         if ($portsArray) {
-            $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
+
+            [$node, $nodeAllocations] = pteroSyncGetNodeAllocations($params, $serverNode);
             $variables = pteroSyncProcessAllocations($eggData, $portsArray, $_SERVER_PORT);
+
         }
 
         if (!$variables) {
@@ -542,18 +561,22 @@ function pterosync_CreateAccount(array $params)
             pteroSyncLog('NODE ALLOCATIONS', 'Node allocations not found.', [$node_path]);
         }
 
-        while ($variables && $nodeAllocations) {
+        if ($nodeAllocations) {
             $ips = pteroSyncMakeIParray($nodeAllocations);
             $foundPorts = pteroSyncfindPorts($portsArray, $_SERVER_PORT, $_SERVER_IP, $variables, $ips);
-            if ($foundPorts) {
-                break;
-            }
-            if (PteroSyncInstance::get()->fetching) {
-                $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
-            } else {
-                break;
-            }
         }
+//        while ($variables && $nodeAllocations) {
+//            $ips = pteroSyncMakeIParray($nodeAllocations);
+//            $foundPorts = pteroSyncfindPorts($portsArray, $_SERVER_PORT, $_SERVER_IP, $variables, $ips, $dedicated_ip);
+//            if ($foundPorts) {
+//                break;
+//            }
+//            if (PteroSyncInstance::get()->fetching) {
+//                $nodeAllocations = pteroSyncGetNodeAllocations($params, $node_path);
+//            } else {
+//                break;
+//            }
+//        }
 
         if (!$foundPorts && $variables && $nodeAllocations) {
             pteroSyncLog('Ports not founds', 'Ports not founds.', [
@@ -602,7 +625,6 @@ function pterosync_CreateAccount(array $params)
                     'databases' => (int)$databases,
                     'allocations' => (int)$maximumAllocations,
                     'backups' => (int)$backups,
-                    'split_limit' => (int)$split_limit,
                 ],
             ], $allocationArray), 'PATCH');
 
@@ -611,7 +633,7 @@ function pterosync_CreateAccount(array $params)
 
             $allocation = $updateResult['attributes']['allocation'];
             $serverAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
-            pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $serverAllocations, $allocation);
+            pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT, $_SERVER_ALIAS_IP, $serverAllocations, $allocation);
             pteroSyncApplicationApi($params, 'servers/' . $serverId . '/startup', [
                 'startup' => $server['attributes']['container']['environment']['STARTUP'],
                 'egg' => $server['attributes']['egg'],
@@ -624,7 +646,7 @@ function pterosync_CreateAccount(array $params)
 
 
         unset($params['password']);
-        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $params);
+        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT, $_SERVER_ALIAS_IP, $params);
         pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
         Capsule::table('tblhosting')->where('id', $params['serviceid'])->update([
             'username' => '',
@@ -737,8 +759,8 @@ function pterosync_ChangePackage(array $params)
         $allocations = pteroSyncGetOption($params, 'allocations');
         $backups = pteroSyncGetOption($params, 'backups');
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
-        $split_limit = pteroSyncGetOption($params, 'split_limit');
 
+        $threads = pteroSyncGetOption($params,'threads');
         $updateData = [
             'allocation' => $serverData['allocation'],
             'memory' => (int)$memory,
@@ -746,14 +768,20 @@ function pterosync_ChangePackage(array $params)
             'io' => (int)$io,
             'cpu' => (int)$cpu,
             'disk' => (int)$disk,
+            'threads' => (string)$threads,
             'oom_disabled' => $oom_disabled,
             'feature_limits' => [
                 'databases' => (int)$databases,
                 'allocations' => (int)$allocations,
                 'backups' => (int)$backups,
-                'split_limit' => (int)$split_limit,
             ],
         ];
+
+        $feature_limits = pteroSyncGetOption($params, 'feature_limits');
+        $feature_limits = json_decode($feature_limits, true);
+        if ($feature_limits) {
+            $updateData['feature_limits'] = array_merge($updateData['feature_limits'], $feature_limits);
+        }
 
         $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', $updateData, 'PATCH');
         if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
@@ -762,7 +790,7 @@ function pterosync_ChangePackage(array $params)
         $_SERVER_IP = '';
         $_SERVER_PORT = '';
         $_SERVER_ALIAS_IP = false;
-        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $serverAllocations, $allocation);
+        pteroSync_getServerIPAndPort($_SERVER_IP, $_SERVER_PORT, $_SERVER_ALIAS_IP, $serverAllocations, $allocation);
 
         $nestId = pteroSyncGetOption($params, 'nest_id');
         $eggId = pteroSyncGetOption($params, 'egg_id');
@@ -806,7 +834,7 @@ function pterosync_ChangePackage(array $params)
         $_SERVER_ID = $serverData['uuid'];
         $customFieldId = pteroSyncGetCustomFiledId($params);
 
-        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT,$_SERVER_ALIAS_IP, $params);
+        pteroSync_updateServerDomain($_SERVER_IP, $_SERVER_PORT, $_SERVER_ALIAS_IP, $params);
         pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
     } catch (Exception $err) {
         return $err->getMessage();
