@@ -839,7 +839,7 @@ function pteroSyncGenerateServerStatusArray($server, $serverStatusType)
         $queryPort = $environment['QUERY_PORT'];
     }
 
-    if ($serverStatusType != 'node' || $serverStatusType != 'nest') {
+    if (!in_array($serverStatusType,['egg','nest'])){
         $serverStatusType = 'nest';
     }
 

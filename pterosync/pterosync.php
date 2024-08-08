@@ -926,7 +926,7 @@ function pterosync_ClientArea(array $params)
         $serverId = $params['customfields']['UUID (Server ID)'];
 
         $serverStatusType = pteroSyncGetOption($params, 'hide_server_status');
-        $serverData = pteroSyncGetServer($params, true, 'user,node,allocations,nest');
+        $serverData = pteroSyncGetServer($params, true, 'user,node,allocations,nest,egg');
         if (!$serverData) {
             return [
                 'templatefile' => 'clientarea',
