@@ -86,10 +86,10 @@ function pterosync_loadNets($params)
 function pterosyncAddHelpTooltip($message, $link = '#')
 {
     if ($link != '#') {
-        $link = 'https://github.com/wohahobg/PteroSync/wiki';
+        $link = 'https://github.com/wohahobg/pterosync/wiki';
     }
     if ($link == 'port') {
-        $link = 'https://github.com/wohahobg/PteroSync/wiki/Ports-Ranges';
+        $link = 'https://github.com/wohahobg/pterosync/wiki/Ports-Ranges';
     }
     // Use htmlspecialchars to encode special characters
     $encodedMessage = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
@@ -125,7 +125,7 @@ function pterosync_ConfigKeys()
         "default_variables" => "Default Variables",
         'server_port_offset' => "Server Port Offset",
         "feature_limits" => "Feature Limits",
-        "hide_server_status" => "Hide Server Status",
+        "hide_server_status" => "Server Status Type",
         'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4."
     ];
 
@@ -305,10 +305,19 @@ function pterosync_ConfigOptions()
             "Size" => 25,
             'SimpleMode' => true,
         ],
+        //We must keep this as this name
+        //since a lot of people already have set `off` or so.
+        //and if we change the key name we are going to fuck up them.
         "hide_server_status" => [
-            'FriendlyName' => "Hide Server Status",
-            "Description" => "Check to disable server status on client product page.",
-            "Type" => "yesno",
+            'FriendlyName' => "Server Status Type",
+            "Description" => pterosyncAddHelpTooltip("Select the name to be used for Server Status. Ensure the name/egg is correctly spelled in English, such as Minecraft or Source.", 'server_'),
+            "Type" => "dropdown",
+            "Default" => "Nest",
+            "Options" => [
+                'nest' => 'Nest Name',
+                'egg' => 'Egg Name',
+                'off' => 'Do not show server status',
+            ],
             "Size" => 25,
             'SimpleMode' => true,
         ],
@@ -329,7 +338,7 @@ function pteroSyncGetOption(array $params, $id, $default = NULL)
     $options = pterosync_ConfigKeys();
 
     $friendlyName = $options[$id];
-    if (isset($params['configoptions'][$friendlyName]) && $params['configoptions'][$friendlyName] !== '') {
+    if (isset($params['A'][$friendlyName]) && $params['configoptions'][$friendlyName] !== '') {
         return $params['configoptions'][$friendlyName];
     } else if (isset($params['configoptions'][$id]) && $params['configoptions'][$id] !== '') {
         return $params['configoptions'][$id];
@@ -488,7 +497,7 @@ function pterosync_CreateAccount(array $params)
         $backups = pteroSyncGetOption($params, 'backups');
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
 
-        $threads = pteroSyncGetOption($params,'threads');
+        $threads = pteroSyncGetOption($params, 'threads');
         $serverData = [
             'name' => $name,
             'user' => (int)$userId,
@@ -523,6 +532,10 @@ function pterosync_CreateAccount(array $params)
         $feature_limits = pteroSyncGetOption($params, 'feature_limits');
         $feature_limits = json_decode($feature_limits, true);
         if ($feature_limits) {
+            foreach ($feature_limits as $featureName => $default) {
+                $value = pteroSyncGetOption($params, $featureName, $default);
+                $feature_limits[$featureName] = $value;
+            }
             $serverData['feature_limits'] = array_merge($serverData['feature_limits'], $feature_limits);
         }
 
@@ -760,7 +773,7 @@ function pterosync_ChangePackage(array $params)
         $backups = pteroSyncGetOption($params, 'backups');
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
 
-        $threads = pteroSyncGetOption($params,'threads');
+        $threads = pteroSyncGetOption($params, 'threads');
         $updateData = [
             'allocation' => $serverData['allocation'],
             'memory' => (int)$memory,
@@ -906,27 +919,50 @@ function pterosync_ClientArea(array $params)
     if ($params['moduletype'] !== 'pterosync') return;
 
     global $_LANG;
+
     try {
         $isAdmin = $_SESSION['adminid'] ?? 0;
         $hostname = pteroSyncGetHostname($params);
         $serverId = $params['customfields']['UUID (Server ID)'];
 
-        $hide_server_status = pteroSyncGetOption($params, 'hide_server_status');
+        $serverStatusType = pteroSyncGetOption($params, 'hide_server_status');
         $serverData = pteroSyncGetServer($params, true, 'user,node,allocations,nest');
-        if (!$serverData) return [
-            'templatefile' => 'clientarea',
-            'vars' => [
-                'serverFound' => false
-            ],
-        ];
-        [$game, $address, $queryPort] = pteroSyncGenerateServerStatusArray($serverData, $hide_server_status);
+        if (!$serverData) {
+            return [
+                'templatefile' => 'clientarea',
+                'vars' => [
+                    'serverFound' => false
+                ],
+            ];
+        }
 
+        [$game, $address, $queryPort, $serverPort] = pteroSyncGenerateServerStatusArray($serverData, $serverStatusType);
+
+        // Update server UUID if empty
+        if ($serverId == '') {
+            $serverId = $serverData['uuid'];
+            $customFieldId = pteroSyncGetCustomFiledId($params);
+            pteroSyncUpdateCustomFiled($params, $customFieldId, $serverData['uuid']);
+        }
+
+        // Update server IP if empty
+        if ($params['domain'] == '') {
+            pteroSync_updateServerDomain($address, $serverPort, $address, $params);
+        }
+
+        $serverIp = $params['domain'];
+        if ($address !== false) {
+            $parts = explode(':', $params['domain']);
+            $serverIp = $address;
+            if (isset($parts[1])) {
+                $serverIp = $address . ':' . $parts[1];
+            }
+        }
 
         $endpoint = 'servers/' . $serverData['identifier'] . '/resources';
         $serverState = pteroSyncClientApi($params, $endpoint);
 
         if (isset($_GET['modop']) && $_GET['modop'] == 'custom' && isset($_GET['a'])) {
-
             if ($serverState['status_code'] === 404) {
                 pteroSyncreturnJsonMessage($_LANG['SERVER_NOT_FOUND'], 404);
             }
@@ -939,26 +975,17 @@ function pterosync_ClientArea(array $params)
                 'getState', 'getFtpDetails' => 'pteroSyncServerState',
                 default => false,
             };
+
             if ($action !== false) {
                 $action($params, $serverState['attributes']['current_state'], $serverData['identifier']);
             }
 
-            pteroSyncreturnJsonMessage('ACTON_NOT_FOUND');
+            pteroSyncreturnJsonMessage('ACTION_NOT_FOUND');
         }
-
 
         $actionUrl = "https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         $userAttributes = $serverData['relationships']['user']['attributes'];
         $nodeAttributes = $serverData['relationships']['node']['attributes'];
-        $serverIp = $params['domain'];
-
-        if ($address !== false) {
-            $parts = explode(':', $params['domain']);
-            $serverIp = $address;
-            if (isset($parts[1])) {
-                $serverIp = $address . ':' . $parts[1];
-            }
-        }
 
         return [
             'templatefile' => 'clientarea',
