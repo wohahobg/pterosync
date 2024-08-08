@@ -1,5 +1,12 @@
 # PteroSync
+
+Hey there! If you love PteroSync and want to support us, how about buying us a coffee? We promise it'll fuel our next awesome update! ☕️💖
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G2G7V5BCQ)
+
+### Join Our Community! 🎉
+We're not just a project, we're a community! Have questions or just want to hang out? Join our Discord Server and be part of the fun. Click the link below and let's get the conversation started! 🚀💬
+[Join Our Discord Server!](https://discord.com/invite/ABGVfZ7a5u)
+
 
 PteroSync is a trailblazer in server deployment and management, offering advanced solutions that make complex server processes simpler and more efficient. Our technology empowers businesses to focus on growth by efficiently handling server allocation and deployment. Designed to meet a wide range of business needs, our scalable and reliable solutions are at the forefront of server management technology.
 
