@@ -494,7 +494,7 @@ function pteroSyncMakeIParray($allocations)
         }
 
         // Second pass to filter out allocations with IPs that should be removed
-        $allocations = array_filter($allocations, function($allocation) use ($ipsToRemove) {
+        $allocations = array_filter($allocations, function ($allocation) use ($ipsToRemove) {
             return !in_array($allocation['attributes']['ip'], $ipsToRemove);
         });
 
@@ -820,26 +820,36 @@ function pteroSyncServerState($params, $serverState, $serverId)
     ], 200);
 }
 
-function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
+function pteroSyncGenerateServerStatusArray($server, $serverStatusType)
 {
-    if (!PteroSyncInstance::get()->show_server_information || $hide_server_status === "on") {
-        return [false, false, false];
-    }
+
     $environment = $server['container']['environment'];
     $useQueryPort = isset($environment['QUERY_PORT']);
     $allocations = $server['relationships']['allocations']['data'];
     $address = '';
-    $port = '';
-    pteroSync_getServerIPAndPort($address, $port, $address, $allocations, $server['allocation']);
+    $serverPort = '';
+    pteroSync_getServerIPAndPort($address, $serverPort, $address, $allocations, $server['allocation']);
+
+    if (!PteroSyncInstance::get()->show_server_information || $serverStatusType === "off") {
+        return [false, $address, false, $serverPort];
+    }
+
+    $queryPort = $serverPort;
     if ($useQueryPort) {
-        $port = $environment['QUERY_PORT'];
+        $queryPort = $environment['QUERY_PORT'];
     }
-    $nestName = strtolower($server['relationships']['nest']['attributes']['name']);
-    $nestName = explode(' ', $nestName);
-    $game = $nestName[0] ?? false;
-    if (isset($nestName[1]) && $nestName[1] != 'servers') {
-        $game .= ' ' . $nestName[1];
+
+    if ($serverStatusType != 'node' || $serverStatusType != 'nest') {
+        $serverStatusType = 'nest';
     }
+
+    $name = strtolower($server['relationships'][$serverStatusType]['attributes']['name']);
+    $name = explode(' ', $name);
+    $game = $name[0] ?? false;
+    if (isset($name[1]) && $name[1] != 'servers') {
+        $game .= ' ' . $name[1];
+    }
+
     $gameEngine = match ($game) {
         'minecraft' => 'minecraft',
         'samp' => 'samp',
@@ -847,7 +857,7 @@ function pteroSyncGenerateServerStatusArray($server, $hide_server_status)
         'fivem' => 'fivem',
         default => 'source'
     };
-    return [$gameEngine, $address, $port];
+    return [$gameEngine, $address, $queryPort, $serverPort];
 }
 
 function pteroSync_updateServerDomain($serverIp, $serverPort, $serverAliasIp, $params)
