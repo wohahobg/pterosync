@@ -473,7 +473,7 @@ function pterosync_CreateAccount(array $params)
         }
 
         $name = pteroSyncGetOption($params, 'server_name', pteroSyncGenerateUsername() . '_' . $params['serviceid']);
-        [$memory, $swap, $disk] = pteroSyncGetMemorySwapAndDisck($params);
+        [$memory, $swap, $disk] = pteroSyncGetMemorySwapAndDisk($params);
 
         $io = pteroSyncGetOption($params, 'io');
         $cpu = pteroSyncGetOption($params, 'cpu');
