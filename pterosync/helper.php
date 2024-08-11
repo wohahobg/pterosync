@@ -55,6 +55,15 @@ class PteroSyncInstance
      * @var false|mixed
      */
     public $dedicated_ip = false;
+    public string $server_ip = "0";
+    public int $server_port = 0;
+    public string|bool $server_alias_ip = false;
+    /**
+     * @var array|mixed
+     */
+    public array $node = [];
+    public array $node_allocations = [];
+    public array $variables = [];
     private array|false $server = false;
 
     public function __construct()
@@ -432,37 +441,8 @@ function pteroSyncGetNodeAllocations($params, $serverNode)
             }
         }
     }
-    return [$node, $allocations];
-
-    die;
-    $perPage = 200;
-    $PteroSyncSettings = PteroSyncInstance::get();
-    $currentPage = $PteroSyncSettings->fetchingNextPage;
-    $path = sprintf(
-        '%s?per_page=%d&page=%d',
-        $nodePath,
-        $perPage,
-        $currentPage
-    );
-
-    $nodeAllocations = pteroSyncApplicationApi($params, $path);
-
-    if ($nodeAllocations['status_code'] == 200 && !empty($nodeAllocations['data'])) {
-
-        $PteroSyncSettings->fetchedResults = array_merge($PteroSyncSettings->fetchedResults ?? [], $nodeAllocations['data']);
-        $PteroSyncSettings->fetching = true;
-
-        if (empty($nodeAllocations['meta']['pagination']['links']['next'])) {
-            $PteroSyncSettings->fetchingNextPage = 1;
-            $PteroSyncSettings->fetching = false;
-        } else {
-            $PteroSyncSettings->fetchingNextPage = $currentPage + 1;
-        }
-
-        return $PteroSyncSettings->fetchedResults;
-    }
-
-    return false;
+    PteroSyncInstance::get()->node_allocations = $allocations;
+    PteroSyncInstance::get()->node = $node;
 }
 
 function pteroSync_calculatePortRange($serverPortRange, $offset)
@@ -478,23 +458,23 @@ function pteroSync_calculatePortRange($serverPortRange, $offset)
     return $newStart . '-' . $newEnd;
 }
 
-function pteroSyncMakeIParray($allocations)
+function pteroSyncMakeIParray()
 {
     $ips = [];
     if (PteroSyncInstance::get()->dedicated_ip) {
+        $serverIp = PteroSyncInstance::get()->server_ip;
         // Array to store IPs to be removed
         $ipsToRemove = [];
-
         // First pass to identify all IPs with assigned ports
-        foreach ($allocations as $allocation) {
+        foreach (PteroSyncInstance::get()->node_allocations as $allocation) {
             $attr = $allocation['attributes'];
-            if ($attr['assigned'] == 1) {
+            if ($attr['assigned'] == 1 && $serverIp != $attr['ip']) {
                 $ipsToRemove[] = $attr['ip'];
             }
         }
 
         // Second pass to filter out allocations with IPs that should be removed
-        $allocations = array_filter($allocations, function ($allocation) use ($ipsToRemove) {
+        $allocations = array_filter(PteroSyncInstance::get()->node_allocations, function ($allocation) use ($ipsToRemove) {
             return !in_array($allocation['attributes']['ip'], $ipsToRemove);
         });
 
@@ -504,7 +484,7 @@ function pteroSyncMakeIParray($allocations)
         // Now $allocations contains only the entries without any IPs that have assigned ports
     }
 
-    foreach ($allocations as $allocation) {
+    foreach (PteroSyncInstance::get()->node_allocations as $allocation) {
         $attr = $allocation['attributes'];
         $ip = $attr['ip'];
         $ips[$ip][] = [
@@ -516,7 +496,7 @@ function pteroSyncMakeIParray($allocations)
     return $ips;
 }
 
-function pteroSyncProcessAllocations($eggData, $ports, $_SERVER_PORT)
+function pteroSyncProcessAllocations($eggData, $ports)
 {
     $variables = [];
     foreach ($eggData['attributes']['relationships']['variables']['data'] as $val) {
@@ -528,7 +508,7 @@ function pteroSyncProcessAllocations($eggData, $ports, $_SERVER_PORT)
     }
 
     if (PteroSyncInstance::get()->server_port_offset > 0) {
-        $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
+        $offset = PteroSyncInstance::get()->server_port + PteroSyncInstance::get()->server_port_offset;
         $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
     }
 
@@ -552,7 +532,7 @@ function pteroSyncProcessAllocations($eggData, $ports, $_SERVER_PORT)
             $variables['EXTRA_ALLOCATION' . $i] = $modifiedString;
         }
     }
-    return $variables;
+    PteroSyncInstance::get()->variables = $variables;
 }
 
 function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
@@ -660,9 +640,12 @@ function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRang
     return pteroSyncfindFreePortsForVariables($ips, $variables);
 }
 
-function pteroSyncfindPorts($ports, $_SERVER_PORT, $_SERVER_IP, $variables, $ips)
+function pteroSyncfindPorts($ports, $ips)
 {
 
+    $_SERVER_IP = PteroSyncInstance::get()->server_ip;
+    $_SERVER_PORT = PteroSyncInstance::get()->server_port;
+    $variables = PteroSyncInstance::get()->variables;
     //check if we need server port offset
     //if so we add it here
     if (PteroSyncInstance::get()->server_port_offset > 0) {
@@ -825,21 +808,24 @@ function pteroSyncGenerateServerStatusArray($server, $serverStatusType)
 
     $environment = $server['container']['environment'];
     $useQueryPort = isset($environment['QUERY_PORT']);
-    $allocations = $server['relationships']['allocations']['data'];
-    $address = '';
-    $serverPort = '';
-    pteroSync_getServerIPAndPort($address, $serverPort, $address, $allocations, $server['allocation']);
+    $serverAllocations = $server['relationships']['allocations']['data'];
 
+    pteroSync_getServerIPAndPort($serverAllocations, $server['allocation']);
+    $address = PteroSyncInstance::get()->server_ip;
     if (!PteroSyncInstance::get()->show_server_information || $serverStatusType === "off") {
-        return [false, $address, false, $serverPort];
+        return [false, $address, false];
     }
 
-    $queryPort = $serverPort;
+    if (PteroSyncInstance::get()->server_alias_ip !== false){
+        $address = PteroSyncInstance::get()->server_alias_ip;
+    }
+
+    $queryPort = PteroSyncInstance::get()->server_port;
     if ($useQueryPort) {
         $queryPort = $environment['QUERY_PORT'];
     }
 
-    if (!in_array($serverStatusType,['egg','nest'])){
+    if (!in_array($serverStatusType, ['egg', 'nest'])) {
         $serverStatusType = 'nest';
     }
 
@@ -857,14 +843,16 @@ function pteroSyncGenerateServerStatusArray($server, $serverStatusType)
         'fivem' => 'fivem',
         default => 'source'
     };
-    return [$gameEngine, $address, $queryPort, $serverPort];
+    return [$gameEngine, $address, $queryPort];
 }
 
-function pteroSync_updateServerDomain($serverIp, $serverPort, $serverAliasIp, $params)
+function pteroSync_updateServerDomain($params)
 {
     try {
-        if ($serverAliasIp !== false) {
-            $serverIp = $serverAliasIp;
+        $serverIp = PteroSyncInstance::get()->server_ip;
+        $serverPort = PteroSyncInstance::get()->server_port;
+        if (PteroSyncInstance::get()->server_alias_ip !== false) {
+            $serverIp = PteroSyncInstance::get()->server_alias_ip;
         }
         Capsule::table('tblhosting')
             ->where('id', $params['serviceid'])
@@ -875,16 +863,16 @@ function pteroSync_updateServerDomain($serverIp, $serverPort, $serverAliasIp, $p
     }
 }
 
-function pteroSync_getServerIPAndPort(&$_SERVER_IP, &$_SERVER_PORT, &$_SERVER_ALIAS_IP, $allocations, $allocation)
+function pteroSync_getServerIPAndPort($allocations, $allocation)
 {
-    $_SERVER_ALIAS_IP = false;
+
     foreach ($allocations as $allocationData) {
         if ($allocationData['attributes']['id'] == $allocation) {
-            $_SERVER_IP = $allocationData['attributes']['ip'];
+            PteroSyncInstance::get()->server_ip = $allocationData['attributes']['ip'];
             if (PteroSyncInstance::get()->use_alias_ip && $allocationData['attributes']['alias'] != '') {
-                $_SERVER_ALIAS_IP = $allocationData['attributes']['alias'];
+                PteroSyncInstance::get()->server_alias_ip = $allocationData['attributes']['alias'];
             }
-            $_SERVER_PORT = $allocationData['attributes']['port'];
+            PteroSyncInstance::get()->server_port = $allocationData['attributes']['port'];
             break;
         }
     }
