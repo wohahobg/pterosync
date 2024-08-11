@@ -355,28 +355,38 @@ function pteroSyncClientApi(array $params, $endPoint, array $data = [], $method 
 
 function pteroSyncGetMemorySwapAndDisk($params)
 {
-
+    // Retrieve and validate memory value
     $memory = pteroSyncGetOption($params, 'memory');
-    if (!is_numeric($memory) && ($memory != '0' && $memory != '')) {
-        throw new Exception('Invalid memory value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
+    if (is_numeric($memory)) {
+        $memory = (int)$memory;
+    } elseif ($memory != '0' && $memory != '') {
+        throw new Exception('Invalid memory value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forget to check your Configuration Options also.');
     }
+
     if (PteroSyncInstance::get()->memory_as_gb) {
         $memory = pteroSyncConvertToMB($memory);
     }
 
-    $swap = (int)pteroSyncGetOption($params, 'swap');
-    if (!is_numeric($swap) && ($swap != '0' && $swap != '')) {
-        throw new Exception('Invalid swap value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
+    // Retrieve and validate swap value
+    $swap = pteroSyncGetOption($params, 'swap');
+    if (is_numeric($swap)) {
+        $swap = (int)$swap;
+    } elseif ($swap != '0' && $swap != '') {
+        throw new Exception('Invalid swap value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forget to check your Configuration Options also.');
     }
 
     if (PteroSyncInstance::get()->swap_as_gb) {
         $swap = pteroSyncConvertToMB($swap);
     }
 
-    $disk = (int)pteroSyncGetOption($params, 'disk');
-    if (!is_numeric($disk) && ($disk != '0' && $disk != '')) {
-        throw new Exception('Invalid disk value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
+    // Retrieve and validate disk value
+    $disk = pteroSyncGetOption($params, 'disk');
+    if (is_numeric($disk)) {
+        $disk = (int)$disk;
+    } elseif ($disk != '0' && $disk != '') {
+        throw new Exception('Invalid disk value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forget to check your Configuration Options also.');
     }
+
     if (PteroSyncInstance::get()->disk_as_gb) {
         $disk = pteroSyncConvertToMB($disk);
     }
