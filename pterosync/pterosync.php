@@ -507,11 +507,11 @@ function pterosync_CreateAccount(array $params)
             'startup' => $startup,
             'oom_disabled' => $oom_disabled,
             'limits' => [
-                'memory' => (int)$memory,
-                'swap' => (int)$swap,
-                'io' => (int)$io,
-                'cpu' => (int)$cpu,
-                'disk' => (int)$disk,
+                'memory' => is_numeric($memory) ? (int)$memory : $memory,
+                'swap' => is_numeric($swap) ? (int)$swap : $swap,
+                'io' => is_numeric($io) ? (int)$io : $io,
+                'cpu' => is_numeric($cpu) ? (int)$cpu : $cpu,
+                'disk' => is_numeric($disk) ? (int)$disk : $disk,
                 'threads' => (string)$threads,
             ],
             'feature_limits' => [
@@ -611,19 +611,24 @@ function pterosync_CreateAccount(array $params)
             }
             $allocationArray['add_allocations'] = $additional;
 
-            $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
-                'memory' => (int)$memory,
-                'swap' => (int)$swap,
-                'io' => (int)$io,
-                'cpu' => (int)$cpu,
-                'disk' => (int)$disk,
-                'oom_disabled' => $oom_disabled,
-                'feature_limits' => [
-                    'databases' => (int)$databases,
-                    'allocations' => (int)$maximumAllocations,
-                    'backups' => (int)$backups,
-                ],
-            ], $allocationArray), 'PATCH');
+            $updateResult = pteroSyncApplicationApi(
+                $params,
+                'servers/' . $serverId . '/build?include=allocations',
+                array_merge([
+                    'memory' => is_numeric($memory) ? (int)$memory : $memory,
+                    'swap' => is_numeric($swap) ? (int)$swap : $swap,
+                    'io' => is_numeric($io) ? (int)$io : $io,
+                    'cpu' => is_numeric($cpu) ? (int)$cpu : $cpu,
+                    'disk' => is_numeric($disk) ? (int)$disk : $disk,
+                    'oom_disabled' => $oom_disabled,
+                    'feature_limits' => [
+                        'databases' => is_numeric($databases) ? (int)$databases : $databases,
+                        'allocations' => is_numeric($maximumAllocations) ? (int)$maximumAllocations : $maximumAllocations,
+                        'backups' => is_numeric($backups) ? (int)$backups : $backups,
+                    ],
+                ], $allocationArray),
+                'PATCH'
+            );
 
             if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
 
@@ -741,15 +746,14 @@ function pterosync_ChangePassword(array $params)
 
 function pterosync_ChangePackage(array $params)
 {
-
     try {
-
         $serverData = pteroSyncGetServer($params, true);
         if (!$serverData) throw new Exception('Failed to change package of server because it doesn\'t exist.');
         $serverId = $serverData['id'];
 
-        [$memory, $swap, $disk] = pteroSyncGetMemorySwapAndDisck($params);
+        [$memory, $swap, $disk] = pteroSyncGetMemorySwapAndDisk($params);
 
+        // Ensure IO and CPU are converted to integers if they are numeric
         $io = pteroSyncGetOption($params, 'io');
         $cpu = pteroSyncGetOption($params, 'cpu');
         $databases = pteroSyncGetOption($params, 'databases');
@@ -758,19 +762,21 @@ function pterosync_ChangePackage(array $params)
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
 
         $threads = pteroSyncGetOption($params, 'threads');
+
+        // Convert to integers where necessary
         $updateData = [
             'allocation' => $serverData['allocation'],
-            'memory' => (int)$memory,
-            'swap' => (int)$swap,
-            'io' => (int)$io,
-            'cpu' => (int)$cpu,
-            'disk' => (int)$disk,
+            'memory' => is_numeric($memory) ? (int)$memory : $memory,
+            'swap' => is_numeric($swap) ? (int)$swap : $swap,
+            'io' => is_numeric($io) ? (int)$io : $io,
+            'cpu' => is_numeric($cpu) ? (int)$cpu : $cpu,
+            'disk' => is_numeric($disk) ? (int)$disk : $disk,
             'threads' => (string)$threads,
             'oom_disabled' => $oom_disabled,
             'feature_limits' => [
-                'databases' => (int)$databases,
-                'allocations' => (int)$allocations,
-                'backups' => (int)$backups,
+                'databases' => is_numeric($databases) ? (int)$databases : $databases,
+                'allocations' => is_numeric($allocations) ? (int)$allocations : $allocations,
+                'backups' => is_numeric($backups) ? (int)$backups : $backups,
             ],
         ];
 
@@ -805,7 +811,6 @@ function pterosync_ChangePackage(array $params)
             elseif (isset($attr['default_value'])) $environment[$var] = $attr['default_value'];
         }
 
-
         $image = pteroSyncGetOption($params, 'image', $eggData['attributes']['docker_image']);
         $startup = pteroSyncGetOption($params, 'startup', $eggData['attributes']['startup']);
         $updateData = [
@@ -819,10 +824,10 @@ function pterosync_ChangePackage(array $params)
         if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update startup of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
 
         if ($eggId !== $serverData['egg']) {
-            //TODO Option to re install the egg
-            //TODO what if the egg id is not same ?
-            //TOOD should we looking for new ports ?
-            //TOOD what should we do ?
+            //TODO Option to reinstall the egg
+            //TODO what if the egg id is not the same?
+            //TODO should we look for new ports?
+            //TODO what should we do?
             //pteroSyncApplicationApi($params, 'servers/' . $serverId . '/reinstall', [], 'POST');
         }
 
