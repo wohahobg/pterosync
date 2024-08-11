@@ -569,7 +569,7 @@ function pterosync_CreateAccount(array $params)
             pteroSyncLog('NODE ALLOCATIONS', 'Node allocations not found.', [$node_path]);
         }
 
-        if (PteroSyncInstance::get()->node_allocations) {
+        if (PteroSyncInstance::get()->variables && PteroSyncInstance::get()->node_allocations) {
             $ips = pteroSyncMakeIParray();
             $foundPorts = pteroSyncfindPorts($portsArray, $ips);
         }
@@ -917,6 +917,7 @@ function pterosync_ClientArea(array $params)
                 ],
             ];
         }
+        //[$variables, $meta] = pteroSyncGetServerVariables($params,$serverData['uuid']);
 
         [$game, $address, $queryPort] = pteroSyncGenerateServerStatusArray($serverData, $serverStatusType);
 
@@ -929,7 +930,7 @@ function pterosync_ClientArea(array $params)
 
         // Update server IP if empty
         if ($params['domain'] == '') {
-            pteroSync_updateServerDomain($address, $serverPort, $address, $params);
+            pteroSync_updateServerDomain($params);
         }
 
         $serverIp = $params['domain'];
@@ -972,6 +973,7 @@ function pterosync_ClientArea(array $params)
         return [
             'templatefile' => 'clientarea',
             'vars' => [
+                'serverData' => $serverData,
                 'serviceUrl' => $hostname . '/server/' . $serverData['identifier'],
                 'currentState' => $serverState['attributes']['current_state'],
                 'getStateUrl' => $actionUrl . '&modop=custom&a=getState',

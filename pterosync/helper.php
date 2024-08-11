@@ -386,6 +386,17 @@ function pteroSyncGetServer(array $params, $raw = false, $include = false)
     return false;
 }
 
+function pteroSyncGetServerVariables(array $params, $serverId)
+{
+    $data = pteroSyncClientApi($params, 'servers/' . $serverId . '/startup', [], 'GET', true);
+    if ($data['status_code'] === 200) {
+        return [$data['data'],$data['meta']];
+    } else if ($data['status_code'] === 500) {
+        throw new Exception('Failed to get server, panel errored. Check panel logs for more info.');
+    }
+    return false;
+}
+
 function pteroSyncGetClientServer($params, $serverId)
 {
     $serverResult = pteroSyncClientApi($params, 'servers/' . $serverId . '?include=subusers', [], 'GET', true);
@@ -816,7 +827,7 @@ function pteroSyncGenerateServerStatusArray($server, $serverStatusType)
         return [false, $address, false];
     }
 
-    if (PteroSyncInstance::get()->server_alias_ip !== false){
+    if (PteroSyncInstance::get()->server_alias_ip !== false) {
         $address = PteroSyncInstance::get()->server_alias_ip;
     }
 
@@ -841,6 +852,8 @@ function pteroSyncGenerateServerStatusArray($server, $serverStatusType)
         'samp' => 'samp',
         'mta' => 'mta',
         'fivem' => 'fivem',
+        'palworld' => 'palworld',
+        'arma 3', 'arma3' => 'arma3',
         default => 'source'
     };
     return [$gameEngine, $address, $queryPort];
