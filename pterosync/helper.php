@@ -355,16 +355,17 @@ function pteroSyncClientApi(array $params, $endPoint, array $data = [], $method 
 
 function pteroSyncGetMemorySwapAndDisk($params)
 {
+
     $memory = pteroSyncGetOption($params, 'memory');
-    if (!filter_var($memory, FILTER_VALIDATE_INT)) {
+    if (!is_numeric($memory) && ($memory != '0' && $memory != '')) {
         throw new Exception('Invalid memory value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
     }
     if (PteroSyncInstance::get()->memory_as_gb) {
         $memory = pteroSyncConvertToMB($memory);
     }
 
-    $swap = pteroSyncGetOption($params, 'swap');
-    if (!filter_var($swap, FILTER_VALIDATE_INT)) {
+    $swap = (int)pteroSyncGetOption($params, 'swap');
+    if (!is_numeric($swap) && ($swap != '0' && $swap != '')) {
         throw new Exception('Invalid swap value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
     }
 
@@ -372,8 +373,8 @@ function pteroSyncGetMemorySwapAndDisk($params)
         $swap = pteroSyncConvertToMB($swap);
     }
 
-    $disk = pteroSyncGetOption($params, 'disk');
-    if (!filter_var($disk, FILTER_VALIDATE_INT)) {
+    $disk = (int)pteroSyncGetOption($params, 'disk');
+    if (!is_numeric($disk) && ($disk != '0' && $disk != '')) {
         throw new Exception('Invalid disk value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
     }
     if (PteroSyncInstance::get()->disk_as_gb) {
@@ -403,7 +404,7 @@ function pteroSyncGetServerVariables(array $params, $serverId)
 {
     $data = pteroSyncClientApi($params, 'servers/' . $serverId . '/startup', [], 'GET', true);
     if ($data['status_code'] === 200) {
-        return [$data['data'],$data['meta']];
+        return [$data['data'], $data['meta']];
     } else if ($data['status_code'] === 500) {
         throw new Exception('Failed to get server, panel errored. Check panel logs for more info.');
     }
@@ -447,6 +448,7 @@ function pteroSyncGenerateUsername($length = 8)
 
 function pteroSyncConvertToMB($input)
 {
+    if ($input == 0 || $input == '') return $input;
     return $input * 1024;
 }
 
