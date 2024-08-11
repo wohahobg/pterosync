@@ -353,20 +353,33 @@ function pteroSyncClientApi(array $params, $endPoint, array $data = [], $method 
     return pteroSyncApiHandler($method, $data, $curl, $headers, $dontLog, $url);
 }
 
-function pteroSyncGetMemorySwapAndDisck($params)
+function pteroSyncGetMemorySwapAndDisk($params)
 {
     $memory = pteroSyncGetOption($params, 'memory');
+    if (!filter_var($memory, FILTER_VALIDATE_INT)) {
+        throw new Exception('Invalid memory value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
+    }
     if (PteroSyncInstance::get()->memory_as_gb) {
         $memory = pteroSyncConvertToMB($memory);
     }
+
     $swap = pteroSyncGetOption($params, 'swap');
+    if (!filter_var($swap, FILTER_VALIDATE_INT)) {
+        throw new Exception('Invalid swap value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
+    }
+
     if (PteroSyncInstance::get()->swap_as_gb) {
         $swap = pteroSyncConvertToMB($swap);
     }
+
     $disk = pteroSyncGetOption($params, 'disk');
+    if (!filter_var($disk, FILTER_VALIDATE_INT)) {
+        throw new Exception('Invalid disk value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
+    }
     if (PteroSyncInstance::get()->disk_as_gb) {
         $disk = pteroSyncConvertToMB($disk);
     }
+
     return [$memory, $swap, $disk];
 }
 
