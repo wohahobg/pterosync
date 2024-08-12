@@ -52,8 +52,8 @@ function pterosync_loadLocations($params): array
 function pterosync_loadEggs($params)
 {
     $eggs = [];
-    if (isset($_SESSION['nets'])) {
-        $nests = $_SESSION['nets'];
+    if (isset($_SESSION['nests'])) {
+        $nests = $_SESSION['nests'];
         foreach ($nests as $nest) {
             $attr = $nest['attributes'];
             $nestId = $attr['id'];
@@ -66,7 +66,7 @@ function pterosync_loadEggs($params)
     return $eggs;
 }
 
-function pterosync_loadNets($params)
+function pterosync_loadNests($params)
 {
     $data = pteroSyncApplicationApi($params, 'nests?include=eggs');
     $list = [];
@@ -77,7 +77,7 @@ function pterosync_loadNets($params)
             $nestId = $attr['id'];
             $list[$nestId] = $attr['name'];
         }
-        $_SESSION['nets'] = $nests;
+        $_SESSION['Nests'] = $nests;
     }
 
     return $list;
@@ -204,7 +204,7 @@ function pterosync_ConfigOptions()
             "Type" => "text",
             "Size" => 25,
             'SimpleMode' => true,
-            'Loader' => 'pterosync_loadNets',
+            'Loader' => 'pterosync_loadNests',
         ],
         "io" => [
             "FriendlyName" => "Block IO Weight",
