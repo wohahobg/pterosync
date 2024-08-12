@@ -748,7 +748,7 @@ function pterosync_ChangePackage(array $params)
         if (!$serverData) throw new Exception('Failed to change package of server because it doesn\'t exist.');
         $serverId = $serverData['id'];
 
-        [$memory, $swap, $disk] = pteroSyncGetMemorySwapAndDisck($params);
+        [$memory, $swap, $disk] = pteroSyncGetMemorySwapAndDisk($params);
 
         $io = pteroSyncGetOption($params, 'io');
         $cpu = pteroSyncGetOption($params, 'cpu');
