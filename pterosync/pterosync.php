@@ -77,7 +77,7 @@ function pterosync_loadNests($params)
             $nestId = $attr['id'];
             $list[$nestId] = $attr['name'];
         }
-        $_SESSION['Nests'] = $nests;
+        $_SESSION['nests'] = $nests;
     }
 
     return $list;
