@@ -847,6 +847,13 @@ function pteroSyncSaveServerVariables($params, $serverData, $serverState)
 {
 
     global $_LANG;
+
+    if (!$params['allowSettingsEdit']) {
+        pteroSyncReturnJson([
+            'message' => $_LANG['SERVER_SETTINGS_EDIT_NOT_ALLOWED']
+        ], 400);
+    }
+
     $serverId = $serverData['id'];
     $environment = $serverData['container']['environment'];
     $data = array_merge($environment, $_POST);
@@ -864,25 +871,19 @@ function pteroSyncSaveServerVariables($params, $serverData, $serverState)
         ], 200);
     }
 
-    $errors = [];
+    $errors = [
+        'errors' => [],
+        'message' => $_LANG['genericerror']['title']
+    ];
     if (isset($result['errors'])) {
         foreach ($result['errors'] as $error) {
-            $errors[] = [
+            $errors['errors'][] = [
                 'input' => str_replace('environment.', '', $error['meta']['source_field']),
                 'message' => $error['detail']
             ];
         }
     }
-
-    if (!$errors) {
-        $errors[] = [
-            'input' => '',
-            'message' => $_LANG['genericerror']['title']
-        ];
-    }
-    pteroSyncReturnJson([
-        'errors' => $errors
-    ], 400);
+    pteroSyncReturnJson($errors, 400);
 }
 
 function pteroSyncSaveServerStartup($params, $serverData, $serverState)

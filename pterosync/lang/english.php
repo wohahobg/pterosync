@@ -45,5 +45,7 @@ $keys = [
     "SERVER_IS_INSTALLING" => "Server is installing",
     "SERVER_SETTINGS" => "Server Settings",
     "SERVER_STARTUP" => "Server Startup",
-    "SERVER_OVERVIEW" => "Server Overview"
+    "SERVER_OVERVIEW" => "Server Overview",
+    "SERVER_SETTINGS_EDIT_NOT_ALLOWED" => "Editing server configuration settings is not permitted for this product.",
+    "SERVER_STARTUP_EDIT_NOT_ALLOWED" => "Modifying server startup settings is not allowed for this product.",
 ];

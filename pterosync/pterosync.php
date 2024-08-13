@@ -942,6 +942,8 @@ function pterosync_ClientArea(array $params)
         if ($allowServerConfigurationEdit == 'settings' && PteroSyncInstance::get()->allow_variables_edit === true) {
             $allowSettingsEdit = true;
         }
+        $params['allowSettingsEdit'] = $allowSettingsEdit;
+        $params['allowStartUpEdit'] = $allowStartUpEdit;
 
         $serverData = pteroSyncGetServer($params, true, 'user,node,allocations,nest,egg');
 
@@ -979,6 +981,7 @@ function pterosync_ClientArea(array $params)
 
             pteroSyncreturnJsonMessage('ACTION_NOT_FOUND');
         }
+
 
         [$game, $address, $queryPort] = pteroSyncGenerateServerStatusArray($serverData, $serverStatusType);
 
@@ -1064,6 +1067,9 @@ function pterosync_ClientArea(array $params)
                         $arr['rule'] = 'switch';
                     }
 
+                    if (str_contains($rules, 'numeric') && $arr['rule'] != 'switch') {
+                        $arr['rule'] = 'number';
+                    }
 
                     if (str_contains($rules, 'in:') && $arr['rule'] != 'switch') {
                         $arr['rule'] = 'select';
