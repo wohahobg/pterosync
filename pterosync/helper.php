@@ -12,6 +12,10 @@ class PteroSyncInstance
     public $show_server_information = false;
     public $enable_client_area_password_changer = true;
     public $enable_whmcs_user_sync = false;
+
+    public $allow_startup_edit = false;
+    public $allow_variables_edit = false;
+
     public $game_panel = "pterodactyl";
 
     public $server_port_offset = 0;
@@ -749,8 +753,10 @@ function pteroSyncreturnJsonMessage($message, $code = 200)
     ], $code);
 }
 
-function pteroSyncStartServer($params, $serverState, $serverId)
+function pteroSyncStartServer($params, $serverData, $serverState)
 {
+    $serverId = $serverData['identifier'];
+
     if ($serverState == 'running' || $serverState == 'starting') {
         pteroSyncreturnJsonMessage('SERVER_RESTARTED', 200);
     }
@@ -768,8 +774,10 @@ function pteroSyncStartServer($params, $serverState, $serverId)
     die();
 }
 
-function pteroSyncRestartServer($params, $serverState, $serverId)
+function pteroSyncRestartServer($params, $serverData, $serverState)
 {
+    $serverId = $serverData['identifier'];
+
     if ($serverState == 'starting') {
         pteroSyncreturnJsonMessage('SERVER_RESTARTED', 200);
     }
@@ -786,8 +794,10 @@ function pteroSyncRestartServer($params, $serverState, $serverId)
     die();
 }
 
-function pteroSyncStopServer($params, $serverState, $serverId)
+function pteroSyncStopServer($params, $serverData, $serverState)
 {
+    $serverId = $serverData['identifier'];
+
     if ($serverState == 'offline' || $serverState == 'stopping') {
         pteroSyncreturnJsonMessage('SERVER_STOPPED', 200);
     }
@@ -804,8 +814,10 @@ function pteroSyncStopServer($params, $serverState, $serverId)
     die();
 }
 
-function pteroSyncKillServer($params, $serverState, $serverId)
+function pteroSyncKillServer($params, $serverData, $serverState)
 {
+    $serverId = $serverData['identifier'];
+
     if ($serverState == 'offline' || $serverState == 'stopping') {
         pteroSyncreturnJsonMessage('SERVER_STOPPED', 200);
     }
@@ -822,11 +834,60 @@ function pteroSyncKillServer($params, $serverState, $serverId)
     die();
 }
 
-function pteroSyncServerState($params, $serverState, $serverId)
+function pteroSyncServerState($params, $serverData, $serverState)
 {
+    $serverId = $serverData['identifier'];
+
     pteroSyncReturnJson([
         'state' => $serverState
     ], 200);
+}
+
+function pteroSyncSaveServerVariables($params, $serverData, $serverState)
+{
+
+    global $_LANG;
+    $serverId = $serverData['id'];
+    $environment = $serverData['container']['environment'];
+    $data = array_merge($environment, $_POST);
+
+    $result = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/startup', [
+        'startup' => $serverData['container']['environment']['STARTUP'],
+        'egg' => $serverData['egg'],
+        'image' => $serverData['container']['image'],
+        'environment' => $data,
+        'skip_scripts' => false,
+    ], 'PATCH');
+    if ($result['status_code'] == 200) {
+        pteroSyncReturnJson([
+            'message' => $_LANG['changessavedsuccessfully']
+        ], 200);
+    }
+
+    $errors = [];
+    if (isset($result['errors'])) {
+        foreach ($result['errors'] as $error) {
+            $errors[] = [
+                'input' => str_replace('environment.', '', $error['meta']['source_field']),
+                'message' => $error['detail']
+            ];
+        }
+    }
+
+    if (!$errors) {
+        $errors[] = [
+            'input' => '',
+            'message' => $_LANG['genericerror']['title']
+        ];
+    }
+    pteroSyncReturnJson([
+        'errors' => $errors
+    ], 400);
+}
+
+function pteroSyncSaveServerStartup($params, $serverData, $serverState)
+{
+
 }
 
 function pteroSyncGenerateServerStatusArray($server, $serverStatusType)

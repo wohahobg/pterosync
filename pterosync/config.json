@@ -6,5 +6,7 @@
   "show_server_information": false,
   "enable_client_area_password_changer": true,
   "enable_whmcs_user_sync": false,
-  "use_alias_ip": false
+  "use_alias_ip": false,
+  "allow_startup_edit": true,
+  "allow_variables_edit": true
 }

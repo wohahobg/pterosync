@@ -1,12 +1,23 @@
-<div class="text-center">
-    {if $serverFound == false}
-        <p class="alert alert-warning">{$LANG.SERVER_NOT_FOUND}</p>
-    {else}
+<h3 class="card-title mb-4">
+    {$LANG.SERVER_OVERVIEW}
+</h3>
+<div id="server-installing">
+
+</div>
+{*
+Status types:
+installing,
+install_failed,
+reinstall_failed,
+suspended,
+restoring_backup
+*}
+{if $serverData['status'] == ''}
+    <div id="server-installed">
         <p class="margin-top-bottom">
             <a href="{$serviceUrl}" target="_blank" class="btn btn-default">{$LANG.GOTO_PANEL}</a>
         </p>
         <div class="row mt-2 justify-content-center" id="game-server-status">
-
         </div>
         <div class="row mt-2 mb-5">
             <div class="col">
@@ -58,7 +69,6 @@
                 onclick="if (confirm('{$LANG.SERVER_KILL_PANEL_CONFIRM_MESSAGE}')) sendRequest('{$killUrl}','kill')"
                 class="btn btn-danger mt-2"><i
                     class="fas fa-times"></i> {$LANG.SERVER_KILL_PANEL}</button>
-
         <button type="button" class="btn btn-info mt-2" data-toggle="modal" data-target="#ftpDetails">
             <i class="fas fa-file-upload"></i>
             {$LANG.FTP_DETAILS}
@@ -110,8 +120,10 @@
                 </div>
             </div>
         </div>
-    {/if}
-</div>
+
+    </div>
+{/if}
+
 <script>
     let currentState = "{$currentState}";
     const serverStateUrl = "{$getStateUrl}"

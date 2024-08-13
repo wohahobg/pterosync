@@ -126,7 +126,8 @@ function pterosync_ConfigKeys()
         'server_port_offset' => "Server Port Offset",
         "feature_limits" => "Feature Limits",
         "hide_server_status" => "Server Status Type",
-        'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4."
+        'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4.",
+        'allow_server_configuration_edit' => "Grant users the ability to edit their server's startup parameters and node configuration settings via the Pterodactyl API. This setting controls the level of access users have to critical server configurations."
     ];
 
 }
@@ -310,7 +311,7 @@ function pterosync_ConfigOptions()
         //and if we change the key name we are going to fuck up them.
         "hide_server_status" => [
             'FriendlyName' => "Server Status Type",
-            "Description" => pterosyncAddHelpTooltip("Select the name to be used for Server Status. Ensure the name/egg is correctly spelled in English, such as Minecraft or Source.", 'server_'),
+            "Description" => pterosyncAddHelpTooltip("Select the name to be used for Server Status. Ensure the name/egg is correctly spelled in English, such as Minecraft or Source.", 'hide_server_status'),
             "Type" => "dropdown",
             "Default" => "Nest",
             "Options" => [
@@ -329,7 +330,22 @@ function pterosync_ConfigOptions()
             "Size" => 25,
             "default" => null,
             'SimpleMode' => true,
+        ],
+        "allow_server_configuration_edit" => [
+            'FriendlyName' => "Server Configuration Access",
+            "Description" => pterosyncAddHelpTooltip("Grant users the ability to edit their server's startup parameters and node configuration settings via the Pterodactyl API. This setting controls the level of access users have to critical server configurations.", 'enable_server_configuration_edit'),
+            "Type" => "dropdown",
+            "Default" => "disabled",
+            "Options" => [
+                'disabled' => 'Do not allow',
+                'both' => 'Allow both startup and settings modifications',
+                'startup' => 'Allow only startup modifications',
+                'settings' => 'Allow only settings modifications',
+            ],
+            "Size" => 25,
+            'SimpleMode' => true,
         ]
+
     ];
 }
 
@@ -611,7 +627,7 @@ function pterosync_CreateAccount(array $params)
             }
             $allocationArray['add_allocations'] = $additional;
 
-            $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', array_merge([
+            $newServerArray = array_merge([
                 'memory' => (int)$memory,
                 'swap' => (int)$swap,
                 'io' => (int)$io,
@@ -623,7 +639,12 @@ function pterosync_CreateAccount(array $params)
                     'allocations' => (int)$maximumAllocations,
                     'backups' => (int)$backups,
                 ],
-            ], $allocationArray), 'PATCH');
+            ], $allocationArray);
+
+            if ($feature_limits) {
+                $newServerArray['feature_limits'] = array_merge($serverData['feature_limits'], $feature_limits);
+            }
+            $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', $newServerArray, 'PATCH');
 
             if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
 
@@ -640,7 +661,6 @@ function pterosync_CreateAccount(array $params)
             ], 'PATCH');
 
         }
-
 
         unset($params['password']);
         pteroSync_updateServerDomain($params);
@@ -906,18 +926,59 @@ function pterosync_ClientArea(array $params)
         $isAdmin = $_SESSION['adminid'] ?? 0;
         $hostname = pteroSyncGetHostname($params);
         $serverId = $params['customfields']['UUID (Server ID)'];
-
         $serverStatusType = pteroSyncGetOption($params, 'hide_server_status');
+        $allowServerConfigurationEdit = pteroSyncGetOption($params, 'allow_server_configuration_edit');
+        $allowStartUpEdit = false;
+        $allowSettingsEdit = false;
+
+        if ($allowServerConfigurationEdit == 'both') {
+            $allowStartUpEdit = true;
+            $allowSettingsEdit = true;
+        }
+
+        if ($allowServerConfigurationEdit == 'startup' && PteroSyncInstance::get()->allow_startup_edit === true) {
+            $allowStartUpEdit = true;
+        }
+        if ($allowServerConfigurationEdit == 'settings' && PteroSyncInstance::get()->allow_variables_edit === true) {
+            $allowSettingsEdit = true;
+        }
+
         $serverData = pteroSyncGetServer($params, true, 'user,node,allocations,nest,egg');
+
         if (!$serverData) {
             return [
-                'templatefile' => 'clientarea',
-                'vars' => [
-                    'serverFound' => false
-                ],
+                'templatefile' => 'templates/error.tpl',
+                'vars' => []
             ];
         }
-        //[$variables, $meta] = pteroSyncGetServerVariables($params,$serverData['uuid']);
+
+        $endpoint = 'servers/' . $serverData['identifier'] . '/resources';
+        $serverState = pteroSyncClientApi($params, $endpoint);
+        if (isset($_GET['modop']) && $_GET['modop'] == 'custom' && isset($_GET['a'])) {
+
+
+            if ($serverState['status_code'] === 404) {
+                pteroSyncreturnJsonMessage($_LANG['SERVER_NOT_FOUND'], 404);
+            }
+
+            $action = match ($_GET['a']) {
+                'startServer' => 'pteroSyncStartServer',
+                'restartServer' => 'pteroSyncRestartServer',
+                'stopServer' => 'pteroSyncStopServer',
+                'killServer' => 'pteroSyncKillServer',
+                'saveServerVariables' => 'pteroSyncSaveServerVariables',
+                'saveServerStartup' => 'pteroSyncSaveServerStartup',
+                'getState', 'getFtpDetails' => 'pteroSyncServerState',
+                default => false,
+            };
+
+            if ($action !== false) {
+                $action($params, $serverData, $serverState['attributes']['current_state']);
+                exit(200);
+            }
+
+            pteroSyncreturnJsonMessage('ACTION_NOT_FOUND');
+        }
 
         [$game, $address, $queryPort] = pteroSyncGenerateServerStatusArray($serverData, $serverStatusType);
 
@@ -942,60 +1003,99 @@ function pterosync_ClientArea(array $params)
             }
         }
 
-        $endpoint = 'servers/' . $serverData['identifier'] . '/resources';
-        $serverState = pteroSyncClientApi($params, $endpoint);
-
-        if (isset($_GET['modop']) && $_GET['modop'] == 'custom' && isset($_GET['a'])) {
-            if ($serverState['status_code'] === 404) {
-                pteroSyncreturnJsonMessage($_LANG['SERVER_NOT_FOUND'], 404);
-            }
-
-            $action = match ($_GET['a']) {
-                'startServer' => 'pteroSyncStartServer',
-                'restartServer' => 'pteroSyncRestartServer',
-                'stopServer' => 'pteroSyncStopServer',
-                'killServer' => 'pteroSyncKillServer',
-                'getState', 'getFtpDetails' => 'pteroSyncServerState',
-                default => false,
-            };
-
-            if ($action !== false) {
-                $action($params, $serverState['attributes']['current_state'], $serverData['identifier']);
-            }
-
-            pteroSyncreturnJsonMessage('ACTION_NOT_FOUND');
-        }
-
         $actionUrl = "https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $vars = [
+            'moduleDir' => __DIR__,
+            'serviceId' => $params['serviceid'],
+            'serverData' => $serverData,
+            'currentState' => $serverState['attributes']['current_state'],
+            'serverIp' => $serverIp,
+            'serverId' => $serverId,
+            'isAdmin' => $isAdmin,
+            'allowStartUpEdit' => $allowStartUpEdit,
+            'allowSettingsEdit' => $allowSettingsEdit
+        ];
+
+
         $userAttributes = $serverData['relationships']['user']['attributes'];
         $nodeAttributes = $serverData['relationships']['node']['attributes'];
+        $overviewVars = [
+            'serviceUrl' => $hostname . '/server/' . $serverData['identifier'],
+            'getStateUrl' => $actionUrl . '&modop=custom&a=getState',
+            'startUrl' => $actionUrl . '&modop=custom&a=startServer',
+            'rebootUrl' => $actionUrl . '&modop=custom&a=restartServer',
+            'stopUrl' => $actionUrl . '&modop=custom&a=stopServer',
+            'killUrl' => $actionUrl . '&modop=custom&a=killServer',
+            'ftpDetails' => [
+                'username' => $userAttributes['username'] . '.' . $serverData['identifier'],
+                'host' => 'sftp://' . $nodeAttributes['fqdn'] . ':' . $nodeAttributes['daemon_sftp']
+            ],
+            'gameQueryData' => [
+                'game' => $game,
+                'address' => $address,
+                'port' => $queryPort,
+            ]
+        ];
+        $vars = array_merge($overviewVars, $vars);
+
+
+        [$variables, $meta] = pteroSyncGetServerVariables($params, $serverData['uuid']);
+
+
+        $environment = $serverData['container']['environment'];
+        $editableVariables = [];
+        if ($variables) {
+            foreach ($variables as $variable) {
+                $attr = $variable['attributes'];
+                if ($attr['is_editable']) {
+
+                    $pattern = '/(?<!<a href=")(https?:\/\/[^\s"]+)(?!")/i';
+                    $replacement = '<a href="$1" target="_blank">$1</a>';
+                    $attr['description'] = preg_replace($pattern, $replacement, $attr['description']);
+
+
+                    $rules = $attr['rules'];
+                    $arr = $attr;
+                    $arr['options'] = [];
+                    $arr['rule'] = 'input';
+                    $arr['max_input'] = 255;
+
+                    if (preg_match('/\bin:0,1\b/', $rules) && preg_match('/in:0,1/', $rules) && !preg_match('/in:0,1,/', $rules)) {
+                        $arr['rule'] = 'switch';
+                    }
+
+
+                    if (str_contains($rules, 'in:') && $arr['rule'] != 'switch') {
+                        $arr['rule'] = 'select';
+                        $explode = explode('in:', $rules);
+                        if (isset($explode[1])) {
+                            $arr['options'] = explode(',', $explode[1]);
+                        }
+                    }
+                    if (str_contains($rules, 'max:')) {
+                        $arr['max_input'] = str_replace('max:', '', $rules);
+                    }
+
+
+                    $arr['required'] = str_contains($rules, 'required');
+
+
+                    $editableVariables[] = $arr;
+                }
+            }
+
+        }
+        $vars = array_merge([
+            'editableVariables' => $editableVariables,
+            'environment' => $environment,
+            'saveSettingUrl' => $actionUrl . '&modop=custom&a=saveServerVariables',
+            'saveStartupUrl' => $actionUrl . '&modop=custom&a=saveServerStartup',
+        ], $vars);
+
 
         return [
-            'templatefile' => 'clientarea',
-            'vars' => [
-                'serverData' => $serverData,
-                'serviceUrl' => $hostname . '/server/' . $serverData['identifier'],
-                'currentState' => $serverState['attributes']['current_state'],
-                'getStateUrl' => $actionUrl . '&modop=custom&a=getState',
-                'startUrl' => $actionUrl . '&modop=custom&a=startServer',
-                'rebootUrl' => $actionUrl . '&modop=custom&a=restartServer',
-                'stopUrl' => $actionUrl . '&modop=custom&a=stopServer',
-                'killUrl' => $actionUrl . '&modop=custom&a=killServer',
-                'serverIp' => $serverIp,
-                'serverId' => $serverId,
-                'ftpDetails' => [
-                    'username' => $userAttributes['username'] . '.' . $serverData['identifier'],
-                    'host' => 'sftp://' . $nodeAttributes['fqdn'] . ':' . $nodeAttributes['daemon_sftp']
-                ],
-                'serverFound' => true,
-                'serviceId' => $params['serviceid'],
-                'isAdmin' => $isAdmin,
-                'gameQueryData' => [
-                    'game' => $game,
-                    'address' => $address,
-                    'port' => $queryPort,
-                ]
-            ],
+            'templatefile' => 'cliatarea.tpl',
+            'vars' => $vars
         ];
     } catch (Exception $err) {
         // Ignore

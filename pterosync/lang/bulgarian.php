@@ -41,5 +41,9 @@ $keys = [
     "SERVER_FTP_USERNAME" => "Потребителско име",
     "SERVER_IP" => "Сървър IP",
     "SERVER_ID" => "Сървър ID",
-    "FTP_DETAILS" => "FTP детайли"
+    "FTP_DETAILS" => "FTP детайли",
+    "SERVER_IS_INSTALLING" => "Сървъра е в процес на инсталиране",
+    "SERVER_SETTINGS" => "Сървър настройки",
+    "SERVER_STARTUP" => "Стартови параметри",
+    "SERVER_OVERVIEW" => "Преглед на сървъра"
 ];

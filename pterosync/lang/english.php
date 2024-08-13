@@ -42,5 +42,8 @@ $keys = [
     "SERVER_IP" => "Server IP",
     "SERVER_ID" => "Server ID",
     "FTP_DETAILS" => "FTP Details",
-    "SERVER_IS_INSTALLING" => "Server is installing"
+    "SERVER_IS_INSTALLING" => "Server is installing",
+    "SERVER_SETTINGS" => "Server Settings",
+    "SERVER_STARTUP" => "Server Startup",
+    "SERVER_OVERVIEW" => "Server Overview"
 ];
