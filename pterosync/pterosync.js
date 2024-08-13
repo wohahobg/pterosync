@@ -190,6 +190,45 @@ $(document).ready(function () {
 
     if (typeof currentState === 'undefined') return;
 
+    $('.save-action-pterosync').on('click', function (e) {
+        e.preventDefault();
+
+        const button = $(this),
+            formId = button.data('form-id'),
+            form = $('#' + formId),
+            originalButtonText = button.html();
+
+        button.prop("disabled", true)
+            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ' + originalButtonText);
+
+        // Clear previous errors and success messages
+        $('.error-messages, .success-message').removeClass('border-danger').hide();
+        form.find('.border-danger').removeClass('border-danger');
+
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            success: function (response) {
+                $('.success-message').html(response.message).fadeIn().delay(5000).fadeOut();
+            },
+            error: function (response) {
+                const json = response.responseJSON;
+                if (json.errors) {
+                    json.errors.forEach(function (error) {
+                        $('#' + error.input).addClass('border-danger')
+                            .after('<div class="error-messages text-danger">' + error.message + '</div>');
+                    });
+                } else {
+                    $('.error-message').html(json.message).fadeIn().delay(5000).fadeOut();
+                }
+            },
+            complete: function () {
+                button.html(originalButtonText).prop("disabled", false);
+            }
+        });
+    });
+
     disableButtons(currentState, true)
 
     $(document).on('click', '.copy-text', function () {
@@ -224,4 +263,3 @@ $(document).ready(function () {
         }
     })
 });
-

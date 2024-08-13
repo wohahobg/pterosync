@@ -67,7 +67,8 @@
                                        {if $variable.max_input}maxlength="{$variable.max_input}"{/if}
                                         {if $variable.required}required{/if}>
                             {elseif $variable.rule == 'select' && $variable.options|@count > 0}
-                                <select name="{$variable.env_variable}" id="{$variable.env_variable}" class="form-control">
+                                <select name="{$variable.env_variable}" id="{$variable.env_variable}"
+                                        class="form-control">
                                     {foreach $variable.options as $option}
                                         <option value="{$option}"
                                                 {if $environment[$variable.env_variable] == $option}selected{/if}>
@@ -108,52 +109,6 @@
                     <i class="fa fa-save"></i> {$LANG.clientareaupdatebutton}
                 </button>
             </form>
-
-
-            <script>
-                $(document).ready(function () {
-                    $('.save-action-pterosync').on('click', function (e) {
-                        e.preventDefault();
-
-                        const button = $(this),
-                            formId = button.data('form-id'),
-                            form = $('#' + formId),
-                            originalButtonText = button.html();
-
-                        button.prop("disabled", true)
-                            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ' + originalButtonText);
-
-                        // Clear previous errors and success messages
-                        $('.error-messages, .success-message').removeClass('border-danger').hide();
-                        form.find('.border-danger').removeClass('border-danger');
-
-                        $.ajax({
-                            url: form.attr('action'),
-                            type: 'POST',
-                            data: form.serialize(),
-                            success: function (response) {
-                                $('.success-message').html(response.message).fadeIn().delay(5000).fadeOut();
-                            },
-                            error: function (response) {
-                                const json = response.responseJSON;
-                                if (json.errors) {
-                                    json.errors.forEach(function (error) {
-                                        $('#' + error.input).addClass('border-danger')
-                                            .after('<div class="error-messages text-danger">' + error.message + '</div>');
-                                    });
-                                } else {
-                                    $('.error-message').html(json.message).fadeIn().delay(5000).fadeOut();
-                                }
-                            },
-                            complete: function () {
-                                button.html(originalButtonText).prop("disabled", false);
-                            }
-                        });
-                    });
-                });
-
-            </script>
-
         </div>
     {/if}
 </div>
