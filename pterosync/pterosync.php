@@ -1104,6 +1104,6 @@ function pterosync_ClientArea(array $params)
             'vars' => $vars
         ];
     } catch (Exception $err) {
-        // Ignore
+        die($err->getMessage());
     }
 }
