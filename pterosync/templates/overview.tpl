@@ -1,6 +1,3 @@
-<h3 class="card-title mb-4">
-    {$LANG.SERVER_OVERVIEW}
-</h3>
 <div id="server-installing">
 
 </div>

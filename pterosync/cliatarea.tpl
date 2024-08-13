@@ -9,7 +9,6 @@
         </a>
     </li>
 
-
     {if $allowStartUpEdit}
         <li class="nav-item">
             <a class="nav-link"
@@ -34,81 +33,18 @@
 </ul>
 <div class="alert alert-success success-message mb-3" style="display: none;"></div>
 <div class="alert alert-danger error-message mt-3" style="display: none;"></div>
-
 <div class="tab-content" id="myTabContent">
-    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
-        {include file='/home/control.qgs-hosting.com/public_html/modules/servers/pterosync/templates/overview.tpl'}
+    <div class="tab-pane fade show active text-center" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+        {include file="`$moduleDir`/templates/overview.tpl"}
     </div>
     {if $allowStartUpEdit}
         <div class="tab-pane fade" id="startup" role="tabpanel" aria-labelledby="startup-tab">
-
+            {include file="`$moduleDir`/templates/startup.tpl"}
         </div>
     {/if}
     {if $allowSettingsEdit}
         <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
-            <h3 class="card-title mb-4">
-                {$LANG.SERVER_SETTINGS}
-            </h3>
-            <form method="post" action="{$saveSettingUrl}" id="saveSettings">
-                <input type="hidden" name="token" value="{$csrfToken}">
-
-                <div class="row">
-                    {foreach $editableVariables as $key => $variable}
-
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{$variable.env_variable}">
-                                {$variable.name}
-                            </label>
-
-                            {if $variable.rule == 'input'}
-                                <input type="text" name="{$variable.env_variable}" id="{$variable.env_variable}"
-                                       class="form-control" value="{$environment[$variable.env_variable]}"
-                                       {if $variable.max_input}maxlength="{$variable.max_input}"{/if}
-                                        {if $variable.required}required{/if}>
-                            {elseif $variable.rule == 'select' && $variable.options|@count > 0}
-                                <select name="{$variable.env_variable}" id="{$variable.env_variable}"
-                                        class="form-control">
-                                    {foreach $variable.options as $option}
-                                        <option value="{$option}"
-                                                {if $environment[$variable.env_variable] == $option}selected{/if}>
-                                            {$option}
-                                        </option>
-                                    {/foreach}
-                                </select>
-                            {elseif $variable.rule == 'switch'}
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" class="custom-control-input" id="{$variable.env_variable}"
-                                           name="{$variable.env_variable}" value="1"
-                                           {if $environment[$variable.env_variable] == '1'}checked{/if}>
-                                    <label class="custom-control-label" for="{$variable.env_variable}">Enable</label>
-                                </div>
-                            {elseif $variable.rule == 'number'}
-                                <input type="number" name="{$variable.env_variable}" id="{$variable.env_variable}"
-                                       class="form-control" value="{$environment[$variable.env_variable]}"
-                                       {if $variable.required}required{/if}>
-                            {/if}
-
-                            {if $variable.description}
-                                <small class="help-block">{$variable.description}</small>
-                            {/if}
-                        </div>
-                    </div>
-
-                    {if ($key + 1) % 2 == 0 && $key + 1 < $editableVariables|@count}
-                </div>
-                <hr>
-                <div class="row">
-                    {/if}
-                    {/foreach}
-                </div>
-
-                <button type="button" id="saveButtonSettings"
-                        data-form-id="saveSettings"
-                        class="btn btn-primary save-action-pterosync">
-                    <i class="fa fa-save"></i> {$LANG.clientareaupdatebutton}
-                </button>
-            </form>
+            {include file="`$moduleDir`/templates/settings.tpl"}
         </div>
     {/if}
 </div>
