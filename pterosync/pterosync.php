@@ -1100,7 +1100,7 @@ function pterosync_ClientArea(array $params)
 
 
         return [
-            'templatefile' => 'cliatarea.tpl',
+            'templatefile' => 'clientarea.tpl',
             'vars' => $vars
         ];
     } catch (Exception $err) {
