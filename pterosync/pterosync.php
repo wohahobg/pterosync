@@ -417,6 +417,7 @@ function pterosync_TestConnection(array $params)
 function pterosync_CreateAccount(array $params)
 {
 
+
     try {
         PteroSyncInstance::get()->service_id = $params['serviceid'];
         $portsJson = pteroSyncGetOption($params, 'ports_ranges');
@@ -569,7 +570,6 @@ function pterosync_CreateAccount(array $params)
         pteroSync_getServerIPAndPort($serverAllocations, $allocation);
 
         $serverNode = $server['attributes']['node'];
-        $node_path = 'nodes/' . $serverNode . '/allocations';
         $foundPorts = [];
 
         if ($portsArray) {
@@ -582,7 +582,7 @@ function pterosync_CreateAccount(array $params)
         }
 
         if (!PteroSyncInstance::get()->node_allocations) {
-            pteroSyncLog('NODE ALLOCATIONS', 'Node allocations not found.', [$node_path]);
+            pteroSyncLog('NODE ALLOCATIONS', 'Node allocations not found.', [$serverNode]);
         }
 
         if (PteroSyncInstance::get()->variables && PteroSyncInstance::get()->node_allocations) {
@@ -598,6 +598,7 @@ function pterosync_CreateAccount(array $params)
         }
 
         if ($foundPorts) {
+            pteroSyncLog('Found ports', 'Found ports.', $foundPorts);
             $_SERVER_PORT_ID = $serverAllocations[0]['attributes']['id'];
 
             $allocationArray['allocation'] = $_SERVER_PORT_ID;
@@ -942,6 +943,8 @@ function pterosync_ClientArea(array $params)
         if ($allowServerConfigurationEdit == 'settings' && PteroSyncInstance::get()->allow_variables_edit === true) {
             $allowSettingsEdit = true;
         }
+        //hide this for now ?
+        $allowStartUpEdit = false;
         $params['allowSettingsEdit'] = $allowSettingsEdit;
         $params['allowStartUpEdit'] = $allowStartUpEdit;
 
@@ -1039,11 +1042,9 @@ function pterosync_ClientArea(array $params)
                 'port' => $queryPort,
             ]
         ];
+
         $vars = array_merge($overviewVars, $vars);
-
-
         [$variables, $meta] = pteroSyncGetServerVariables($params, $serverData['uuid']);
-
 
         $environment = $serverData['container']['environment'];
         $editableVariables = [];

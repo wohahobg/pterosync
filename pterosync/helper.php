@@ -509,7 +509,7 @@ function pteroSyncMakeIParray()
         });
 
         // Optional: Reindex the array to have consecutive keys
-        $allocations = array_values($allocations);
+        PteroSyncInstance::get()->node_allocations = array_values($allocations);
 
         // Now $allocations contains only the entries without any IPs that have assigned ports
     }
@@ -577,6 +577,7 @@ function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
             $foundPort = false;
 
             foreach ($ports as $port) {
+                if ($port['assigned'] == 1) continue;
                 if (!isset($allocatedPorts[$port['id']])) {
                     if ($port['port'] >= $start && $port['port'] <= $end) {
                         $port['ip'] = $ip;
@@ -628,6 +629,7 @@ function pteroSyncfindFreePortsForAllVariablesOnIP($ports, $variables, $_SERVER_
         $foundPort = false;
 
         foreach ($ports as $port) {
+            if ($port['assigned'] == 1) continue;
             if (!isset($allocatedPorts[$port['id']])) {
                 if ($port['port'] >= $start && $port['port'] <= $end) {
                     $port['ip'] = $_SERVER_IP;
