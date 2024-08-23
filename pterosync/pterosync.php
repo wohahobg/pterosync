@@ -417,7 +417,6 @@ function pterosync_TestConnection(array $params)
 function pterosync_CreateAccount(array $params)
 {
 
-
     try {
         PteroSyncInstance::get()->service_id = $params['serviceid'];
         $portsJson = pteroSyncGetOption($params, 'ports_ranges');
