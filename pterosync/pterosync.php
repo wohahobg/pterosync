@@ -355,28 +355,35 @@ function pteroSyncGetOption(array $params, $id, $default = NULL)
 
     $friendlyName = $options[$id];
     if (isset($params['A'][$friendlyName]) && $params['configoptions'][$friendlyName] !== '') {
-        return $params['configoptions'][$friendlyName];
+        $value = $params['configoptions'][$friendlyName];
     } else if (isset($params['configoptions'][$id]) && $params['configoptions'][$id] !== '') {
-        return $params['configoptions'][$id];
+        $value = $params['configoptions'][$id];
     } else if (isset($params['customfields'][$friendlyName]) && $params['customfields'][$friendlyName] !== '') {
-        return $params['customfields'][$friendlyName];
+        $value = $params['customfields'][$friendlyName];
     } else if (isset($params['customfields'][$id]) && $params['customfields'][$id] !== '') {
-        return $params['customfields'][$id];
-    }
-
-    $found = false;
-    $i = 0;
-    foreach ($options as $key => $value) {
-        $i++;
-        if ($key === $id) {
-            $found = true;
-            break;
+        $value = $params['customfields'][$id];
+    } else {
+        $found = false;
+        $i = 0;
+        foreach ($options as $key => $value) {
+            $i++;
+            if ($key === $id) {
+                $found = true;
+                break;
+            }
+        }
+        if ($found && isset($params['configoption' . $i]) && $params['configoption' . $i] !== '') {
+            $value = $params['configoption' . $i];
+        } else {
+            $value = $default;
         }
     }
-    if ($found && isset($params['configoption' . $i]) && $params['configoption' . $i] !== '') {
-        return $params['configoption' . $i];
+
+    if (is_int($value)) {
+        return (string)$value;
     }
-    return $default;
+
+    return $value;
 }
 
 function pterosync_TestConnection(array $params)
