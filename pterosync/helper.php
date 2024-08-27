@@ -265,19 +265,20 @@ function pteroSyncLog($action, $string, $array)
 
 function pteroSyncGetHostname(array $params)
 {
-
     $hostname = $params['serverhostname'];
+    $port = $params['serverport'] ?: '';
 
     if ($hostname === '') throw new Exception('Could not find the panel\'s hostname - did you configure server group for the product?');
     // For whatever reason, WHMCS converts some characters of the hostname to their literal meanings (- => dash, etc) in some cases
-    foreach ([
-                 'DOT' => '.',
-                 'DASH' => '-',
-             ] as $from => $to) {
+    foreach (['DOT' => '.', 'DASH' => '-'] as $from => $to) {
         $hostname = str_replace($from, $to, $hostname);
     }
-    if (ip2long($hostname) !== false) $hostname = 'http://' . $hostname;
-    else $hostname = ($params['serversecure'] ? 'https://' : 'http://') . $hostname;
+    if (ip2long($hostname) !== false) {
+        $hostname = "http://$hostname" . ($port ? ":$port" : '');
+    } else {
+        $protocol = $params['serversecure'] ? 'https://' : 'http://';
+        $hostname = "$protocol$hostname" . ($port ? ":$port" : '');
+    }
     return rtrim($hostname, '/');
 }
 
