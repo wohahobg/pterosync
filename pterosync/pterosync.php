@@ -1,6 +1,11 @@
 <?php
 //TODO handle when egg_id and nest_id is changed
 //TODO make it optional to reinstall the server when egg_id or nest_id is changed or both.
+//TODO make so the client can change the product from given list.
+//Example: Each product will have an option to select products
+//Where user can choose from those products to Swap/Change
+//This will be usefull if you want to allow users to change to different product with same price.
+//TODO add also option for time so they don't spam it.
 
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
@@ -32,6 +37,8 @@ function pterosync_MetaData()
         "DisplayName" => "Ptero Sync",
         "APIVersion" => "1.1",
         "RequiresServer" => true,
+        'DefaultNonSSLPort' => 80,
+        'DefaultSSLPort' => 443,
     ];
 }
 
