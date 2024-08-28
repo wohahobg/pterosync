@@ -32,8 +32,6 @@ function pterosync_MetaData()
         "DisplayName" => "Ptero Sync",
         "APIVersion" => "1.1",
         "RequiresServer" => true,
-        'DefaultNonSSLPort' => 80,
-        'DefaultSSLPort' => 443,
     ];
 }
 
