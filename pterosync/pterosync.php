@@ -434,7 +434,7 @@ function pterosync_CreateAccount(array $params)
 
         $serverId = pteroSyncGetServer($params);
         if ($serverId) throw new Exception('Failed to create server because it is already created.');
-        $customFieldId = pteroSyncGetCustomFiledId($params);
+        $customFieldId = pteroSyncGetCustomFieldId($params);
 
         $userResult = PteroSyncInstance::get()->getPterodactylUser($params, [
             'username' => pteroSyncGetOption($params, 'username', pteroSyncGenerateUsername()),
@@ -664,7 +664,7 @@ function pterosync_CreateAccount(array $params)
 
         unset($params['password']);
         pteroSync_updateServerDomain($params);
-        pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
+        pteroSyncUpdateCustomField($params, $customFieldId, $_SERVER_ID);
         Capsule::table('tblhosting')->where('id', $params['serviceid'])->update([
             'username' => '',
             'password' => '',
@@ -847,10 +847,10 @@ function pterosync_ChangePackage(array $params)
         }
 
         $_SERVER_ID = $serverData['uuid'];
-        $customFieldId = pteroSyncGetCustomFiledId($params);
+        $customFieldId = pteroSyncGetCustomFieldId($params);
 
         pteroSync_updateServerDomain($params);
-        pteroSyncUpdateCustomFiled($params, $customFieldId, $_SERVER_ID);
+        pteroSyncUpdateCustomField($params, $customFieldId, $_SERVER_ID);
     } catch (Exception $err) {
         return $err->getMessage();
     }
@@ -990,8 +990,8 @@ function pterosync_ClientArea(array $params)
         // Update server UUID if empty
         if ($serverId == '') {
             $serverId = $serverData['uuid'];
-            $customFieldId = pteroSyncGetCustomFiledId($params);
-            pteroSyncUpdateCustomFiled($params, $customFieldId, $serverData['uuid']);
+            $customFieldId = pteroSyncGetCustomFieldId($params);
+            pteroSyncUpdateCustomField($params, $customFieldId, $serverData['uuid']);
         }
 
         // Update server IP if empty
