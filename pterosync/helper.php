@@ -707,7 +707,7 @@ function pteroSyncfindPorts($ports, $ips)
     return $foundPorts;
 }
 
-function pteroSyncGetCustomFiledId($params)
+function pteroSyncGetCustomFieldId($params)
 {
     $customFieldExists = Capsule::table('tblcustomfields')
         ->where('relid', $params['packageid'])
@@ -730,7 +730,7 @@ function pteroSyncGetCustomFiledId($params)
     return $customFieldId;
 }
 
-function pteroSyncUpdateCustomFiled($params, $customFieldId, $serverId)
+function pteroSyncUpdateCustomField($params, $customFieldId, $serverId)
 {
     Capsule::table('tblcustomfieldsvalues')
         ->updateOrInsert(
