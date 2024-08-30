@@ -111,7 +111,8 @@ class PteroSyncInstance
                 'serverusername' => $server->username,
                 'serverpassword' => decrypt($server->password),
                 'serveraccesshash' => $server->accesshash,
-                'serversecure' => $server->secure
+                'serversecure' => $server->secure,
+                'serverport' => $server->port,
             ];
         }
         return $this->server;

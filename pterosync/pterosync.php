@@ -7,7 +7,6 @@
 //This will be usefull if you want to allow users to change to different product with same price.
 //TODO add also option for time so they don't spam it.
 
-
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
