@@ -1,8 +1,8 @@
 {
   "game_panel": "pterodactyl",
   "swap_as_gb": false,
-  "disk_as_gb": false,
-  "memory_as_gb": false,
+  "disk_as_gb": true,
+  "memory_as_gb": true,
   "show_server_information": false,
   "enable_client_area_password_changer": true,
   "enable_whmcs_user_sync": false,

@@ -518,7 +518,8 @@ function pterosync_CreateAccount(array $params)
         $backups = pteroSyncGetOption($params, 'backups');
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
 
-        $threads = pteroSyncGetOption($params, 'threads');
+        $threads = pterosync_validateThreads(pteroSyncGetOption($params, 'threads'));
+
         $serverData = [
             'name' => $name,
             'user' => (int)$userId,
@@ -782,7 +783,7 @@ function pterosync_ChangePackage(array $params)
         $backups = pteroSyncGetOption($params, 'backups');
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
 
-        $threads = pteroSyncGetOption($params, 'threads');
+        $threads =  pterosync_validateThreads(pteroSyncGetOption($params, 'threads'));
         $updateData = [
             'allocation' => $serverData['allocation'],
             'memory' => (int)$memory,

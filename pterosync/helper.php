@@ -970,3 +970,13 @@ function pteroSync_getServerIPAndPort($allocations, $allocation)
         }
     }
 }
+
+function pterosync_validateThreads($threads) {
+    //same validation from Pterodactyl panel
+    //app\Models\Server.php
+    $pattern = '/^[0-9-,]+$/';
+    if (preg_match($pattern, $threads)) {
+        return $threads;
+    }
+    return null;
+}
