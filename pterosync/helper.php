@@ -111,8 +111,7 @@ class PteroSyncInstance
                 'serverusername' => $server->username,
                 'serverpassword' => decrypt($server->password),
                 'serveraccesshash' => $server->accesshash,
-                'serversecure' => $server->secure,
-                'serverport' => $server->port,
+                'serversecure' => $server->secure
             ];
         }
         return $this->server;
@@ -538,8 +537,8 @@ function pteroSyncProcessAllocations($eggData, $ports)
         }
     }
 
-    if (PteroSyncInstance::get()->server_port_offset > 0) {
-        $offset = PteroSyncInstance::get()->server_port + PteroSyncInstance::get()->server_port_offset;
+    if (intval(PteroSyncInstance::get()->server_port_offset) > 0) {
+        $offset = PteroSyncInstance::get()->server_port + intval(PteroSyncInstance::get()->server_port_offset);
         $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
     }
 
@@ -584,8 +583,8 @@ function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
                         $port['ip'] = $ip;
                         $freePorts[$var] = $port;
 
-                        if ($var == 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && PteroSyncInstance::get()->server_port_offset > 0) {
-                            $offset = $port['port'] + PteroSyncInstance::get()->server_port_offset;
+                        if ($var == 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && intval(PteroSyncInstance::get()->server_port_offset) > 0) {
+                            $offset = $port['port'] + intval(PteroSyncInstance::get()->server_port_offset);
                             PteroSyncInstance::get()->addFileLog([
                                 'offset' => $offset,
                                 'port' => $port['port']
@@ -665,7 +664,7 @@ function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRang
     if (isset($variables['SERVER_PORT_OFFSET'])) {
         unset($variables['SERVER_PORT_OFFSET']);
         if (!$isRange) {
-            $offset = $serverPort + PteroSyncInstance::get()->server_port_offset;
+            $offset = $serverPort + intval(PteroSyncInstance::get()->server_port_offset);
             $serverPortOffsetArray = ['SERVER_PORT_OFFSET' => $offset . '-' . $offset];
         }
     }
@@ -681,8 +680,8 @@ function pteroSyncfindPorts($ports, $ips)
     $variables = PteroSyncInstance::get()->variables;
     //check if we need server port offset
     //if so we add it here
-    if (PteroSyncInstance::get()->server_port_offset > 0) {
-        $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
+    if (intval (PteroSyncInstance::get()->server_port_offset) > 0) {
+        $offset = $_SERVER_PORT + intval(PteroSyncInstance::get()->server_port_offset);
         $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
     }
     //first we are checking for possible ips for the given IP.
@@ -708,7 +707,7 @@ function pteroSyncfindPorts($ports, $ips)
     return $foundPorts;
 }
 
-function pteroSyncGetCustomFieldId($params)
+function pteroSyncGetCustomFiledId($params)
 {
     $customFieldExists = Capsule::table('tblcustomfields')
         ->where('relid', $params['packageid'])
@@ -731,7 +730,7 @@ function pteroSyncGetCustomFieldId($params)
     return $customFieldId;
 }
 
-function pteroSyncUpdateCustomField($params, $customFieldId, $serverId)
+function pteroSyncUpdateCustomFiled($params, $customFieldId, $serverId)
 {
     Capsule::table('tblcustomfieldsvalues')
         ->updateOrInsert(
@@ -969,14 +968,4 @@ function pteroSync_getServerIPAndPort($allocations, $allocation)
             break;
         }
     }
-}
-
-function pterosync_validateThreads($threads) {
-    //same validation from Pterodactyl panel
-    //app\Models\Server.php
-    $pattern = '/^[0-9-,]+$/';
-    if (preg_match($pattern, $threads)) {
-        return $threads;
-    }
-    return null;
 }
