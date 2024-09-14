@@ -428,27 +428,15 @@ function pteroSyncGetClientServer($params, $serverId)
     return false;
 }
 
-function pteroSyncRandom($length)
-{
-    if (class_exists("\Illuminate\Support\Str")) {
-        return \Illuminate\Support\Str::random($length);
-    } else if (function_exists("str_random")) {
-        return str_random($length);
-    } else {
-        throw new \Exception("Unable to find a valid function for generating random strings");
-    }
-}
-
 function pteroSyncGenerateUsername($length = 8)
 {
-    $returnable = false;
-    while (!$returnable) {
-        $generated = pteroSyncRandom($length);
-        if (preg_match('/[A-Z]+[a-z]+[0-9]+/', $generated)) {
-            $returnable = true;
-        }
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[random_int(0, $charactersLength - 1)];
     }
-    return $generated;
+    return $randomString;
 }
 
 function pteroSyncConvertToMB($input)
