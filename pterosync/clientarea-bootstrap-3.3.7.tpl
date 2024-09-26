@@ -49,6 +49,5 @@
         </div>
     {/if}
 </div>
-
 <div class="alert alert-success success-message mt-3" style="display: none;"></div>
 <div class="alert alert-danger error-message mt-3" style="display: none;"></div>
