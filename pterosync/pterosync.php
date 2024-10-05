@@ -24,6 +24,7 @@ if (file_exists(dirname(__FILE__) . '/lang/' . $language . '.php')) {
 }
 $_LANG = array_merge($keys, $_LANG);
 
+
 include_once dirname(__FILE__) . '/helper.php';
 
 
@@ -291,7 +292,7 @@ function pterosync_ConfigOptions()
             "FriendlyName" => "Default Variables",
             "Description" => pterosyncAddHelpTooltip("Define default values for server variables in JSON format. For instance, set MAX_PLAYERS to 30 with {\"MAX_PLAYERS\": 30}. This is useful for consistent server settings and quick configuration.", 'default-variables'),
             "Type" => "textarea",
-            "default" => '{"MAX_PLAYERS": 30}',
+            "default" => '{"MAX_PLAYERS": "30"}',
             "Size" => 25,
             'SimpleMode' => true,
         ],
@@ -467,6 +468,7 @@ function pterosync_CreateAccount(array $params)
         $environment = [];
         $default_variables = pteroSyncGetOption($params, 'default_variables');
         $default_variables = json_decode($default_variables, true);
+
         foreach ($eggData['attributes']['relationships']['variables']['data'] as $key => $val) {
             $attr = $val['attributes'];
             $var = $attr['env_variable'];
@@ -475,13 +477,13 @@ function pterosync_CreateAccount(array $params)
             $envName = pteroSyncGetOption($params, $attr['env_variable']);
 
             if (isset($friendlyName)) {
-                $environment[$var] = $friendlyName;
+                $environment[$var] = "" . $friendlyName . "";
             } elseif (isset($envName)) {
-                $environment[$var] = $envName;
+                $environment[$var] = "" . $envName . "";
             } elseif (isset($default_variables[$var]) && !in_array($default_variables[$var], PteroSyncInstance::get()->dynamic_variables)) {
-                $environment[$var] = $default_variables[$var];
+                $environment[$var] = "" . $default_variables[$var] . "";
             } else {
-                $environment[$var] = $default;
+                $environment[$var] = "" . $default . "";
             }
         }
 
@@ -784,7 +786,7 @@ function pterosync_ChangePackage(array $params)
         $backups = pteroSyncGetOption($params, 'backups');
         $oom_disabled = (bool)pteroSyncGetOption($params, 'oom_disabled');
 
-        $threads =  pterosync_validateThreads(pteroSyncGetOption($params, 'threads'));
+        $threads = pterosync_validateThreads(pteroSyncGetOption($params, 'threads'));
         $updateData = [
             'allocation' => $serverData['allocation'],
             'memory' => (int)$memory,
