@@ -164,7 +164,18 @@ class PteroSyncInstance
         $arr = array_merge($defaultAttributes, $column);
 
         $updateResult = pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], $arr, 'PATCH');
-        if ($updateResult['status_code'] !== 200) throw new Exception('Failed to change ' . print_r($column, true) . ', received error code: ' . $updateResult['status_code'] . '.');
+
+        if ($updateResult['status_code'] !== 200) {
+            $message = 'Failed to change ' . json_encode($column) . ', received error code: ' . $updateResult['status_code'] . '.';
+            if (isset($updateResult['errors']) && is_array($updateResult['errors'])) {
+                $message = 'Failed to update user details: ';
+                foreach ($updateResult['errors'] as $error) {
+                    $message .= $error['detail'] . '<br>';
+                }
+            }
+            throw new Exception($message);
+        }
+
     }
 
     public function getPterodactylUser($params, array $client = [], $create = true)
@@ -259,7 +270,7 @@ class PteroSyncInstance
     }
 }
 
-function pteroSyncLog($action, $string, $array)
+function pteroSyncLog(string $action, string $string,array $array)
 {
     logModuleCall("PteroSync-WHMCS", $action, $string, $array);
 }
@@ -914,7 +925,6 @@ function pteroSyncGenerateServerStatusArray($server, $serverStatusType)
     if (isset($name[1]) && $name[1] != 'servers') {
         $game .= ' ' . $name[1];
     }
-
     $gameEngine = match ($game) {
         'minecraft' => 'minecraft',
         'samp' => 'samp',
@@ -959,7 +969,8 @@ function pteroSync_getServerIPAndPort($allocations, $allocation)
     }
 }
 
-function pterosync_validateThreads($threads) {
+function pterosync_validateThreads($threads)
+{
     //same validation from Pterodactyl panel
     //app\Models\Server.php
     $pattern = '/^[0-9-,]+$/';
