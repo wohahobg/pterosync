@@ -133,7 +133,8 @@ function pterosync_ConfigKeys()
         "feature_limits" => "Feature Limits",
         "hide_server_status" => "Server Status Type",
         'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4.",
-        'allow_server_configuration_edit' => "Grant users the ability to edit their server's startup parameters and node configuration settings via the Pterodactyl API. This setting controls the level of access users have to critical server configurations."
+        'allow_server_configuration_edit' => "Grant users the ability to edit their server's startup parameters and node configuration settings via the Pterodactyl API. This setting controls the level of access users have to critical server configurations.",
+        'threads_zones' => "qwe"
     ];
 
 }
@@ -350,7 +351,16 @@ function pterosync_ConfigOptions()
             ],
             "Size" => 25,
             'SimpleMode' => true,
+        ],
+        "cpu_zones" => [
+            'FriendlyName' => "CPU Zones",
+            "Description" => pterosyncAddHelpTooltip("Define server-to-CPU core mapping zones. Specify ranges like {\"100\":\"1-2\",\"200\":\"3-4\",\"300\":\"5-6\"} to allocate servers across specific CPU cores.", 'cpu_zones'),
+            "Type" => "textarea",
+            "Size" => 25,
+            "default" => '[]',
+            'SimpleMode' => true,
         ]
+
 
     ];
 }
@@ -570,8 +580,37 @@ function pterosync_CreateAccount(array $params)
         if ($server['status_code'] !== 201) throw new Exception('Failed to create the server, received the error code: ' . $server['status_code'] . '. Enable module debug log for more info.');
 
         $serverId = $server['attributes']['id'];
+        $serverAllocationId = $server['attributes']['allocation'];
         $_SERVER_ID = $server['attributes']['uuid'];
 
+        $nodeId = $server['attributes']['node'];
+
+        $nodeInfo = pteroSyncApplicationApi($params, 'nodes/'.$nodeId.'?include=servers', [], 'GET');
+
+
+
+
+        $threadsZones = pteroSyncGetOption($params, 'threads_zones');
+        $threadsZonesArray = json_decode($threadsZones, true);
+        $hasThreadsZones = false;
+        // If is valid JSON, let's set new $threads based on the total servers for the node.
+        if ($threadsZonesArray) {
+            if ($nodeInfo['status_code'] === 200) {
+                if (isset($nodeInfo['attributes']['relationships']['servers']['data']) && is_array($nodeInfo['attributes']['relationships']['servers']['data'])) {
+                    $totalNodeServers = count($nodeInfo['attributes']['relationships']['servers']['data']);
+
+                    foreach ($threadsZonesArray as $serverLimit => $cpuRange) {
+                        if ($totalNodeServers <= (int)$serverLimit) {
+                            if (pterosync_validateThreads($cpuRange)){
+                                $threads = $cpuRange;
+                                $hasThreadsZones = true;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
         $serverAllocations = $server['attributes']['relationships']['allocations']['data'];
         $allocation = $server['attributes']['allocation'];
@@ -643,6 +682,7 @@ function pterosync_CreateAccount(array $params)
                 'cpu' => (int)$cpu,
                 'disk' => (int)$disk,
                 'oom_disabled' => $oom_disabled,
+                'threads' => (string)$threads,
                 'feature_limits' => [
                     'databases' => (int)$databases,
                     'allocations' => (int)$maximumAllocations,
@@ -650,6 +690,8 @@ function pterosync_CreateAccount(array $params)
                 ],
             ], $allocationArray);
 
+            //Let's set this to false, in case is already updated?
+            $hasThreadsZones = false;
             if ($feature_limits) {
                 $newServerArray['feature_limits'] = array_merge($serverData['feature_limits'], $feature_limits);
             }
@@ -669,6 +711,28 @@ function pterosync_CreateAccount(array $params)
                 'skip_scripts' => false,
             ], 'PATCH');
 
+        }
+
+
+        //Update the threads, just in case if there is on extra ports?
+        //games such as Minecraft, CS2, CS1.6 does not required extra ports ?
+        if ($hasThreadsZones){
+            $updateData = [
+                'allocation' => $serverAllocationId,
+                'memory' => (int)$memory,
+                'swap' => (int)$swap,
+                'io' => (int)$io,
+                'cpu' => (int)$cpu,
+                'disk' => (int)$disk,
+                'threads' => (string)$threads,
+                'oom_disabled' => $oom_disabled,
+                'feature_limits' => [
+                    'databases' => (int)$databases,
+                    'allocations' => (int)$maximumAllocations,
+                    'backups' => (int)$backups,
+                ],
+            ];
+            pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build', $updateData, 'PATCH');
         }
 
         unset($params['password']);
