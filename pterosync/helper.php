@@ -380,7 +380,7 @@ function pteroSyncGetMemorySwapAndDisk($params)
         $memory = pteroSyncConvertToMB($memory);
     }
 
-    $swap = (int)pteroSyncGetOption($params, 'swap');
+    $swap = pteroSyncGetOption($params, 'swap');
     if (!is_numeric($swap) && ($swap != '0' && $swap != '')) {
         throw new Exception('Invalid swap value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
     }
@@ -389,7 +389,7 @@ function pteroSyncGetMemorySwapAndDisk($params)
         $swap = pteroSyncConvertToMB($swap);
     }
 
-    $disk = (int)pteroSyncGetOption($params, 'disk');
+    $disk = pteroSyncGetOption($params, 'disk');
     if (!is_numeric($disk) && ($disk != '0' && $disk != '')) {
         throw new Exception('Invalid disk value provided. Please enter a valid integer. For example: 1, 2, 3, etc. Don\'t forgot to check your Configuration Options also.');
     }
@@ -453,7 +453,8 @@ function pteroSyncGenerateUsername($length = 8)
 function pteroSyncConvertToMB($input)
 {
     if ($input == 0 || $input == '') return $input;
-    return $input * 1024;
+
+    return (int)($input * 1024);
 }
 
 function pteroSyncGetNodeAllocations($params, $serverNode)
@@ -573,6 +574,8 @@ function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
         $foundAll = true;
 
         foreach ($variables as $var => $range) {
+            if (is_array($range)) continue;
+
             list($start, $end) = explode('-', $range);
             $foundPort = false;
 
@@ -592,7 +595,7 @@ function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
                             foreach ($ports as $offsetPort) {
                                 if ($offsetPort['port'] == $offset) {
                                     $offsetPort['ip'] = $ip;
-                                    $foundPort['SERVER_PORT_OFFSET'] = $offsetPort;
+                                    $variables['SERVER_PORT_OFFSET'] = $offsetPort;
                                     break;
                                 }
                             }
@@ -672,6 +675,7 @@ function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRang
     return pteroSyncfindFreePortsForVariables($ips, $variables);
 }
 
+
 function pteroSyncfindPorts($ports, $ips)
 {
 
@@ -684,12 +688,18 @@ function pteroSyncfindPorts($ports, $ips)
         $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
         $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
     }
-    //first we are checking for possible ips for the given IP.
-    $foundPorts = pteroSyncfindFreePortsForAllVariablesOnIP($ips[$_SERVER_IP], $variables, $_SERVER_IP);
-    //if we can't find that we are trying to find ip with the same port that is given by pterodactyl panel.
-    if (!$foundPorts) {
-        $foundPorts = pteroSyncSetServerPortVariables($variables, $_SERVER_PORT, $ips);
-    }
+    $foundPorts = [];
+
+
+//    //first we are checking for possible ips for the given IP.
+//    $foundPorts = pteroSyncfindFreePortsForAllVariablesOnIP($ips[$_SERVER_IP], $variables, $_SERVER_IP);
+//
+//    //if we can't find that we are trying to find ip with the same port that is given by pterodactyl panel.
+//    if (!$foundPorts) {
+//        $foundPorts = pteroSyncSetServerPortVariables($variables, $_SERVER_PORT, $ips);
+//    }
+
+
     //if not we are trying to find any ip in the server port range.
     if (!$foundPorts) {
         $foundPorts = pteroSyncSetServerPortVariables($variables, $ports['SERVER_PORT'], $ips, true);
@@ -706,6 +716,8 @@ function pteroSyncfindPorts($ports, $ips)
     ], 'Founding ports finish');
     return $foundPorts;
 }
+
+
 
 function pteroSyncGetCustomFieldId($params)
 {
