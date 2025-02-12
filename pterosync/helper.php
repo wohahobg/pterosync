@@ -270,7 +270,7 @@ class PteroSyncInstance
     }
 }
 
-function pteroSyncLog(string $action, string $string,array $array)
+function pteroSyncLog(string $action, string $string, array $array)
 {
     logModuleCall("PteroSync-WHMCS", $action, $string, $array);
 }
@@ -471,6 +471,9 @@ function pteroSyncGetNodeAllocations($params, $serverNode)
             }
         }
     }
+    if (!$allocations){
+        throw new Exception('Cannot find any ports for node with id '.$serverNode .' please ensure you have created ports for that node.');
+    }
     PteroSyncInstance::get()->node_allocations = $allocations;
     PteroSyncInstance::get()->node = $node;
 }
@@ -493,9 +496,8 @@ function pteroSyncMakeIParray()
     $ips = [];
     if (PteroSyncInstance::get()->dedicated_ip) {
         $serverIp = PteroSyncInstance::get()->server_ip;
-        // Array to store IPs to be removed
         $ipsToRemove = [];
-        // First pass to identify all IPs with assigned ports
+
         foreach (PteroSyncInstance::get()->node_allocations as $allocation) {
             $attr = $allocation['attributes'];
             if ($attr['assigned'] == 1 && $serverIp != $attr['ip']) {
@@ -503,15 +505,11 @@ function pteroSyncMakeIParray()
             }
         }
 
-        // Second pass to filter out allocations with IPs that should be removed
         $allocations = array_filter(PteroSyncInstance::get()->node_allocations, function ($allocation) use ($ipsToRemove) {
             return !in_array($allocation['attributes']['ip'], $ipsToRemove);
         });
 
-        // Optional: Reindex the array to have consecutive keys
         PteroSyncInstance::get()->node_allocations = array_values($allocations);
-
-        // Now $allocations contains only the entries without any IPs that have assigned ports
     }
 
     foreach (PteroSyncInstance::get()->node_allocations as $allocation) {
@@ -523,8 +521,17 @@ function pteroSyncMakeIParray()
             'id' => $attr['id']
         ];
     }
+
+    // Sort ports in ascending order for each IP
+    foreach ($ips as &$ports) {
+        usort($ports, function ($a, $b) {
+            return $a['port'] <=> $b['port'];
+        });
+    }
+
     return $ips;
 }
+
 
 function pteroSyncProcessAllocations($eggData, $ports)
 {
@@ -574,32 +581,39 @@ function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
 
         foreach ($variables as $var => $range) {
             list($start, $end) = explode('-', $range);
+            $start = (int) $start;
+            $end = (int) $end;
             $foundPort = false;
 
             foreach ($ports as $port) {
-                if ($port['assigned'] == 1) continue;
-                if (!isset($allocatedPorts[$port['id']])) {
-                    if ($port['port'] >= $start && $port['port'] <= $end) {
-                        $port['ip'] = $ip;
-                        $freePorts[$var] = $port;
+                if ($port['assigned'] == 1) continue; // Skip assigned ports
 
-                        if ($var == 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && PteroSyncInstance::get()->server_port_offset > 0) {
-                            $offset = $port['port'] + PteroSyncInstance::get()->server_port_offset;
-                            PteroSyncInstance::get()->addFileLog([
-                                'offset' => $offset,
-                                'port' => $port['port']
-                            ], 'New server port found!');
-                            foreach ($ports as $offsetPort) {
-                                if ($offsetPort['port'] == $offset) {
-                                    $offsetPort['ip'] = $ip;
-                                    $foundPort['SERVER_PORT_OFFSET'] = $offsetPort;
-                                    break;
-                                }
+                if (!isset($allocatedPorts[$port['id']]) && $port['port'] >= $start && $port['port'] <= $end) {
+                    $port['ip'] = $ip;
+                    $freePorts[$var] = $port;
+                    $allocatedPorts[$port['id']] = $port['port'];
+                    $foundPort = true;
+
+
+                    if ($var === 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && PteroSyncInstance::get()->server_port_offset > 0) {
+                        $offsetValue = $port['port'] + PteroSyncInstance::get()->server_port_offset;
+
+                        PteroSyncInstance::get()->addFileLog([
+                            'offset' => $offsetValue,
+                            'port' => $port['port']
+                        ], 'New server port found!');
+
+                        // Find a matching offset port in the available ports
+                        foreach ($ports as $offsetPort) {
+                            if ($offsetPort['port'] == $offsetValue && !$offsetPort['assigned']) {
+                                $offsetPort['ip'] = $ip;
+                                $freePorts['SERVER_PORT_OFFSET'] = $offsetPort;
+                                break;
                             }
                         }
-                        $allocatedPorts[$port['id']] = $port['port'];
-                        $foundPort = true;
                     }
+
+                    break; // Stop searching once a valid port is found for this variable
                 }
             }
 
@@ -684,16 +698,18 @@ function pteroSyncfindPorts($ports, $ips)
         $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
         $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
     }
-    //first we are checking for possible ips for the given IP.
-    $foundPorts = pteroSyncfindFreePortsForAllVariablesOnIP($ips[$_SERVER_IP], $variables, $_SERVER_IP);
-    //if we can't find that we are trying to find ip with the same port that is given by pterodactyl panel.
-    if (!$foundPorts) {
-        $foundPorts = pteroSyncSetServerPortVariables($variables, $_SERVER_PORT, $ips);
-    }
+//    //first we are checking for possible ips for the given IP.
+//    $foundPorts = pteroSyncfindFreePortsForAllVariablesOnIP($ips[$_SERVER_IP], $variables, $_SERVER_IP);
+//    //if we can't find that we are trying to find ip with the same port that is given by pterodactyl panel.
+//    if (!$foundPorts) {
+//        $foundPorts = pteroSyncSetServerPortVariables($variables, $_SERVER_PORT, $ips);
+//    }
+
+
     //if not we are trying to find any ip in the server port range.
-    if (!$foundPorts) {
-        $foundPorts = pteroSyncSetServerPortVariables($variables, $ports['SERVER_PORT'], $ips, true);
-    }
+
+    $foundPorts = pteroSyncSetServerPortVariables($variables, $ports['SERVER_PORT'], $ips, true);
+
 
     PteroSyncInstance::get()->addFileLog([
         'foundedPorts' => json_encode($foundPorts),

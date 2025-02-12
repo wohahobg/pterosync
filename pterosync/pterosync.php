@@ -821,17 +821,25 @@ function pterosync_ChangePackage(array $params)
         $eggData = pteroSyncApplicationApi($params, 'nests/' . $nestId . '/eggs/' . $eggId . '?include=variables');
         if ($eggData['status_code'] !== 200) throw new Exception('Failed to get egg data, received error code: ' . $eggData['status_code'] . '. Enable module debug log for more info.');
 
+        $default_variables = pteroSyncGetOption($params, 'default_variables');
+        $default_variables = json_decode($default_variables, true);
         $environment = [];
         foreach ($eggData['attributes']['relationships']['variables']['data'] as $key => $val) {
             $attr = $val['attributes'];
             $var = $attr['env_variable'];
+            $default = $attr['default_value'];
             $friendlyName = pteroSyncGetOption($params, $attr['name']);
             $envName = pteroSyncGetOption($params, $attr['env_variable']);
 
-            if (isset($friendlyName)) $environment[$var] = $friendlyName;
-            elseif (isset($envName)) $environment[$var] = $envName;
-            elseif (isset($serverData['container']['environment'][$var])) $environment[$var] = $serverData['container']['environment'][$var];
-            elseif (isset($attr['default_value'])) $environment[$var] = $attr['default_value'];
+            if (isset($friendlyName)) {
+                $environment[$var] = "" . $friendlyName . "";
+            } elseif (isset($envName)) {
+                $environment[$var] = "" . $envName . "";
+            } elseif (isset($default_variables[$var]) && !in_array($default_variables[$var], PteroSyncInstance::get()->dynamic_variables)) {
+                $environment[$var] = "" . $default_variables[$var] . "";
+            } else {
+                $environment[$var] = "" . $default . "";
+            }
         }
 
 
