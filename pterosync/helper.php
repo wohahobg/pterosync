@@ -18,11 +18,9 @@ class PteroSyncInstance
 
     public $game_panel = "pterodactyl";
 
-    public $server_port_offset = 0;
+   // public $server_port_offset = 0;
 
-    public $dynamic_variables = [
-        'SERVER_PORT_OFFSET'
-    ];
+    public $dynamic_variables = [];
 
     public $dynamic_environment_array = [];
 
@@ -544,10 +542,10 @@ function pteroSyncProcessAllocations($eggData, $ports)
         }
     }
 
-    if (PteroSyncInstance::get()->server_port_offset > 0) {
-        $offset = PteroSyncInstance::get()->server_port + PteroSyncInstance::get()->server_port_offset;
-        $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
-    }
+//    if (PteroSyncInstance::get()->server_port_offset > 0) {
+//        $offset = PteroSyncInstance::get()->server_port + PteroSyncInstance::get()->server_port_offset;
+//        $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
+//    }
 
     if (isset($ports['EXTRA_ALLOCATION'])) {
         $extra = $ports['EXTRA_ALLOCATION'];
@@ -595,23 +593,23 @@ function pteroSyncfindFreePortsForVariables($ips_data, &$variables)
                     $foundPort = true;
 
 
-                    if ($var === 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && PteroSyncInstance::get()->server_port_offset > 0) {
-                        $offsetValue = $port['port'] + PteroSyncInstance::get()->server_port_offset;
-
-                        PteroSyncInstance::get()->addFileLog([
-                            'offset' => $offsetValue,
-                            'port' => $port['port']
-                        ], 'New server port found!');
-
-                        // Find a matching offset port in the available ports
-                        foreach ($ports as $offsetPort) {
-                            if ($offsetPort['port'] == $offsetValue && !$offsetPort['assigned']) {
-                                $offsetPort['ip'] = $ip;
-                                $freePorts['SERVER_PORT_OFFSET'] = $offsetPort;
-                                break;
-                            }
-                        }
-                    }
+//                    if ($var === 'SERVER_PORT' && !isset($variables['SERVER_PORT_OFFSET']) && PteroSyncInstance::get()->server_port_offset > 0) {
+//                        $offsetValue = $port['port'] + PteroSyncInstance::get()->server_port_offset;
+//
+//                        PteroSyncInstance::get()->addFileLog([
+//                            'offset' => $offsetValue,
+//                            'port' => $port['port']
+//                        ], 'New server port found!');
+//
+//                        // Find a matching offset port in the available ports
+//                        foreach ($ports as $offsetPort) {
+//                            if ($offsetPort['port'] == $offsetValue && !$offsetPort['assigned']) {
+//                                $offsetPort['ip'] = $ip;
+//                                $freePorts['SERVER_PORT_OFFSET'] = $offsetPort;
+//                                break;
+//                            }
+//                        }
+//                    }
 
                     break; // Stop searching once a valid port is found for this variable
                 }
@@ -675,13 +673,13 @@ function pteroSyncSetServerPortVariables(&$variables, $serverPort, $ips, $isRang
     $serverPortValue = $isRange ? $serverPort : $serverPort . '-' . $serverPort;
     $serverPortArray = ['SERVER_PORT' => $serverPortValue];
     $serverPortOffsetArray = [];
-    if (isset($variables['SERVER_PORT_OFFSET'])) {
-        unset($variables['SERVER_PORT_OFFSET']);
-        if (!$isRange) {
-            $offset = $serverPort + PteroSyncInstance::get()->server_port_offset;
-            $serverPortOffsetArray = ['SERVER_PORT_OFFSET' => $offset . '-' . $offset];
-        }
-    }
+//    if (isset($variables['SERVER_PORT_OFFSET'])) {
+//        unset($variables['SERVER_PORT_OFFSET']);
+//        if (!$isRange) {
+//            $offset = $serverPort + PteroSyncInstance::get()->server_port_offset;
+//            $serverPortOffsetArray = ['SERVER_PORT_OFFSET' => $offset . '-' . $offset];
+//        }
+//    }
     $variables = array_merge($serverPortArray, $serverPortOffsetArray, $variables);
     return pteroSyncfindFreePortsForVariables($ips, $variables);
 }
@@ -694,10 +692,12 @@ function pteroSyncfindPorts($ports, $ips)
     $variables = PteroSyncInstance::get()->variables;
     //check if we need server port offset
     //if so we add it here
-    if (PteroSyncInstance::get()->server_port_offset > 0) {
-        $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
-        $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
-    }
+
+//    if (PteroSyncInstance::get()->server_port_offset > 0) {
+//        $offset = $_SERVER_PORT + PteroSyncInstance::get()->server_port_offset;
+//        $variables = array_merge(['SERVER_PORT_OFFSET' => $offset . '-' . $offset], $variables);
+//    }
+
 //    //first we are checking for possible ips for the given IP.
 //    $foundPorts = pteroSyncfindFreePortsForAllVariablesOnIP($ips[$_SERVER_IP], $variables, $_SERVER_IP);
 //    //if we can't find that we are trying to find ip with the same port that is given by pterodactyl panel.
@@ -707,7 +707,6 @@ function pteroSyncfindPorts($ports, $ips)
 
 
     //if not we are trying to find any ip in the server port range.
-
     $foundPorts = pteroSyncSetServerPortVariables($variables, $ports['SERVER_PORT'], $ips, true);
 
 

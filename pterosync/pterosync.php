@@ -89,13 +89,15 @@ function pterosync_loadNests($params)
     return $list;
 }
 
-function pterosyncAddHelpTooltip($message, $link = '#')
+function pterosyncAddHelpTooltip($message, $link)
 {
-    if ($link != '#') {
-        $link = 'https://github.com/wohahobg/pterosync/wiki';
-    }
-    if ($link == 'port') {
+
+    if ($link == "ports-ranges") {
         $link = 'https://github.com/wohahobg/pterosync/wiki/Ports-Ranges';
+    } elseif ($link == "default-variables") {
+        $link = 'https://github.com/wohahobg/pterosync/wiki/Default-Variables';
+    } else {
+        $link = 'https://github.com/wohahobg/pterosync/wiki/General-Information#' . $link;
     }
     // Use htmlspecialchars to encode special characters
     $encodedMessage = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
@@ -104,38 +106,32 @@ function pterosyncAddHelpTooltip($message, $link = '#')
 
 function pterosync_ConfigKeys()
 {
-    $diskConfig = PteroSyncInstance::get()->disk_as_gb;
-    $diskTitle = $diskConfig ? "Disk Space (GB)" : "Disk Space (MB)";
-    $memoryConfig = PteroSyncInstance::get()->memory_as_gb;
-    $memoryTitle = $memoryConfig ? "Memory (GB)" : "Memory (MB)";
-    $swapConfig = PteroSyncInstance::get()->swap_as_gb;
-    $swapTitle = $swapConfig ? "Swap (GB)" : "Swap (MB)";
     return [
-        "cpu" => "CPU Limit (%)",
-        "disk" => $diskTitle,
-        "memory" => $memoryTitle,
-        "swap" => $swapTitle,
-        "location_id" => "Location ID",
-        "dedicated_ip" => "Dedicated IP",
-        "nest_id" => "Nest ID",
-        "io" => "Block IO Weight",
-        "egg_id" => "Egg ID",
-        "startup" => "Startup",
-        "image" => "Image",
-        "databases" => "Databases",
-        "server_name" => "Server Name",
-        "oom_disabled" => "Disable OOM Killer",
-        "backups" => "Backups",
-        "allocations" => "Allocations",
-        "ports_ranges" => "Ports Ranges",
-        "default_variables" => "Default Variables",
-        'server_port_offset' => "Server Port Offset",
-        "feature_limits" => "Feature Limits",
-        "hide_server_status" => "Server Status Type",
-        'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4.",
-        'allow_server_configuration_edit' => "Grant users the ability to edit their server's startup parameters and node configuration settings via the Pterodactyl API. This setting controls the level of access users have to critical server configurations."
+        "cpu",
+        "disk",
+        "memory",
+        "swap",
+        "location_id",
+        "dedicated_ip",
+        "nest_id",
+        "io",
+        "egg_id",
+        "startup",
+        "image",
+        "databases",
+        "server_name",
+        "oom_disabled",
+        "backups",
+        "allocations",
+        "ports_ranges",
+        "default_variables",
+        "server_port_offset",
+        "feature_limits",
+        "hide_server_status",
+        "threads",
+        "allow_server_configuration_edit",
+        "dedicated_port",
     ];
-
 }
 
 function pterosync_ConfigOptions()
@@ -160,7 +156,7 @@ function pterosync_ConfigOptions()
     return [
         "cpu" => [
             "FriendlyName" => "<style></style> CPU Limit (%)",
-            "Description" => pterosyncAddHelpTooltip('Amount of CPU to assign to the created server.', 'cpu'),
+            "Description" => pterosyncAddHelpTooltip('Amount of CPU to assign to the created server.', 'cpu-limit-'),
             "Type" => "text",
             "Size" => 25,
             "Default" => 100,
@@ -168,7 +164,7 @@ function pterosync_ConfigOptions()
         ],
         "disk" => [
             "FriendlyName" => $diskTitle,
-            "Description" => pterosyncAddHelpTooltip($diskDescription, 'disk'),
+            "Description" => pterosyncAddHelpTooltip($diskDescription, 'disk-space'),
             "Type" => "text",
             "Size" => 25,
             "Default" => $diskDefault,
@@ -215,7 +211,7 @@ function pterosync_ConfigOptions()
         ],
         "io" => [
             "FriendlyName" => "Block IO Weight",
-            "Description" => pterosyncAddHelpTooltip("Block IO Adjustment number (10-1000)", 'io'),
+            "Description" => pterosyncAddHelpTooltip("Block IO Adjustment number (10-1000)", 'block-io-weight'),
             "Type" => "text",
             "Size" => 25,
             "Default" => "500",
@@ -231,14 +227,14 @@ function pterosync_ConfigOptions()
         ],
         "startup" => [
             "FriendlyName" => "Startup",
-            "Description" => pterosyncAddHelpTooltip("Custom startup command to assign to the created server (optional)", 'startup'),
+            "Description" => pterosyncAddHelpTooltip("Custom startup command to assign to the created server (optional)", 'startup-command'),
             "Type" => "text",
             "Size" => 25,
             'SimpleMode' => true,
         ],
         "image" => [
             "FriendlyName" => "Image",
-            "Description" => pterosyncAddHelpTooltip("Custom Docker image to assign to the created server (optional)", 'image'),
+            "Description" => pterosyncAddHelpTooltip("Custom Docker image to assign to the created server (optional)", 'custom-docker-image'),
             "Type" => "text",
             "Size" => 25,
             'SimpleMode' => true,
@@ -261,7 +257,7 @@ function pterosync_ConfigOptions()
         ],
         "oom_disabled" => [
             "FriendlyName" => "Disable OOM Killer",
-            "Description" => pterosyncAddHelpTooltip("Should the Out Of Memory Killer be disabled (optional)", 'oom-disabled'),
+            "Description" => pterosyncAddHelpTooltip("Should the Out Of Memory Killer be disabled (optional)", 'disable-oom-killer'),
             "Type" => "yesno",
             "Size" => 25,
             'SimpleMode' => true,
@@ -306,7 +302,7 @@ function pterosync_ConfigOptions()
         ],
         "feature_limits" => [
             'FriendlyName' => "Feature Limits",
-            "Description" => pterosyncAddHelpTooltip("Feature limits are ideal for overriding add-ons that are integrated into your Pterodactyl panel. Ensure that the input is valid JSON. For more information, please refer to our Wiki page.", 'feature_limits'),
+            "Description" => pterosyncAddHelpTooltip("Feature limits are ideal for overriding add-ons that are integrated into your Pterodactyl panel. Ensure that the input is valid JSON. For more information, please refer to our Wiki page.", 'feature-limits'),
             "Type" => "text",
             "default" => '0',
             "Size" => 25,
@@ -317,7 +313,7 @@ function pterosync_ConfigOptions()
         //and if we change the key name we are going to fuck up them.
         "hide_server_status" => [
             'FriendlyName' => "Server Status Type",
-            "Description" => pterosyncAddHelpTooltip("Select the name to be used for Server Status. Ensure the name/egg is correctly spelled in English, such as Minecraft or Source.", 'hide_server_status'),
+            "Description" => pterosyncAddHelpTooltip("Select the name to be used for Server Status. Ensure the name/egg is correctly spelled in English, such as Minecraft or Source.", 'game-server-status'),
             "Type" => "dropdown",
             "Default" => "Nest",
             "Options" => [
@@ -331,7 +327,7 @@ function pterosync_ConfigOptions()
         //        'threads' => "Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4."
         "threads" => [
             'FriendlyName' => "CPU Pinning",
-            "Description" => pterosyncAddHelpTooltip("Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4.", 'threads'),
+            "Description" => pterosyncAddHelpTooltip("Enter the specific CPU cores that this process can run on, or leave blank to allow all cores. This can be a single number, or a comma seperated list. Example: 0, 0-1,3, or 0,1,3,4.", 'cpu-pinning'),
             "Type" => "text",
             "Size" => 25,
             "default" => null,
@@ -339,7 +335,7 @@ function pterosync_ConfigOptions()
         ],
         "allow_server_configuration_edit" => [
             'FriendlyName' => "Server Configuration Access",
-            "Description" => pterosyncAddHelpTooltip("Grant users the ability to edit their server's startup parameters and node configuration settings via the Pterodactyl API. This setting controls the level of access users have to critical server configurations.", 'enable_server_configuration_edit'),
+            "Description" => pterosyncAddHelpTooltip("Grant users the ability to edit their server's startup parameters and node configuration settings via the Pterodactyl API. This setting controls the level of access users have to critical server configurations.", 'server-configuration-access'),
             "Type" => "dropdown",
             "Default" => "disabled",
             "Options" => [
@@ -348,6 +344,13 @@ function pterosync_ConfigOptions()
                 'startup' => 'Allow only startup modifications',
                 'settings' => 'Allow only settings modifications',
             ],
+            "Size" => 25,
+            'SimpleMode' => true,
+        ],
+        "dedicated_port" => [
+            "FriendlyName" => "Dedicated Port",
+            "Description" => pterosyncAddHelpTooltip("Works like Dedicated IP but reserves only a specific port instead of the entire IP. It ensures that the first port from the configured Ports Range (e.g., SERVER_PORT = 27015-27020, which means 27015 will always be used) is assigned to the server, guaranteeing a fixed port for that client.", 'dedicated-port'),
+            "Type" => "yesno",
             "Size" => 25,
             'SimpleMode' => true,
         ]
@@ -372,7 +375,7 @@ function pteroSyncGetOption(array $params, $id, $default = NULL)
 
     $found = false;
     $i = 0;
-    foreach ($options as $key => $value) {
+    foreach ($options as $key) {
         $i++;
         if ($key === $id) {
             $found = true;
@@ -504,9 +507,19 @@ function pterosync_CreateAccount(array $params)
 
         $location_id = pteroSyncGetOption($params, 'location_id');
         $dedicated_ip = (bool)pteroSyncGetOption($params, 'dedicated_ip');
+        $dedicated_port = (bool)pteroSyncGetOption($params, 'dedicated_port');
         PteroSyncInstance::get()->dedicated_ip = $dedicated_ip;
 
-        PteroSyncInstance::get()->server_port_offset = pteroSyncGetOption($params, 'server_port_offset');
+        if ($dedicated_port) {
+            if (isset($portsArray['SERVER_PORT'])) {
+                $portsData = $portsArray;
+                $explode = explode('-', $portsArray['SERVER_PORT']);
+                $portsData['SERVER_PORT'] = $explode[0] ?? null;
+                $portsArray = $portsData;
+            }
+        }
+
+        //PteroSyncInstance::get()->server_port_offset = pteroSyncGetOption($params, 'server_port_offset');
 
         if ($portsArray) {
             $port_range = isset($portsArray['SERVER_PORT']) ? explode(',', $portsArray['SERVER_PORT']) : [];
