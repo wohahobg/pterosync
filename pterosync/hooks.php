@@ -28,17 +28,49 @@ add_hook('ClientAreaProductDetails', 1, function ($params) {
     return $params;
 });
 
+
 add_hook('AdminAreaHeadOutput', 1, function ($params) {
-    $url = PteroSyncInstance::get()->cssPath;
-    return '<link rel="stylesheet" href="' . $url . '">' . PHP_EOL;
+    // Only load on pterosync-related admin pages:
+    // - Product module settings (configproducts.php with module=pterosync)
+    // - Service details pages for pterosync products
+    $filename = $params['filename'] ?? basename($_SERVER['SCRIPT_NAME'], '.php');
+
+    // Check for product configuration with pterosync module
+    if ($filename === 'configproducts' && isset($_REQUEST['module']) && $_REQUEST['module'] === 'pterosync') {
+        $url = PteroSyncInstance::get()->cssPath;
+        return '<link rel="stylesheet" href="' . $url . '">' . PHP_EOL;
+    }
+
+    // Check for service details page - let it load there as the service may be pterosync
+    if ($filename === 'clientsservices' && isset($_REQUEST['id'])) {
+        $url = PteroSyncInstance::get()->cssPath;
+        return '<link rel="stylesheet" href="' . $url . '">' . PHP_EOL;
+    }
+
+    return '';
 });
 
 add_hook('AdminAreaFooterOutput', 1, function ($params) {
+    // Only load on pterosync-related admin pages
+    $filename = $params['filename'] ?? basename($_SERVER['SCRIPT_NAME'], '.php');
 
-    $url = PteroSyncInstance::get()->jsPath;
-    $urls = '<script src="' . $url . '"></script>' . PHP_EOL;
-    $urls .= '<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>';
-    return $urls;
+    // Check for product configuration with pterosync module
+    if ($filename === 'configproducts' && isset($_REQUEST['module']) && $_REQUEST['module'] === 'pterosync') {
+        $url = PteroSyncInstance::get()->jsPath;
+        $urls = '<script src="' . $url . '"></script>' . PHP_EOL;
+        $urls .= '<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>';
+        return $urls;
+    }
+
+    // Check for service details page
+    if ($filename === 'clientsservices' && isset($_REQUEST['id'])) {
+        $url = PteroSyncInstance::get()->jsPath;
+        $urls = '<script src="' . $url . '"></script>' . PHP_EOL;
+        $urls .= '<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>';
+        return $urls;
+    }
+
+    return '';
 });
 
 add_hook('ClientAreaHeadOutput', 1, function ($params) {
