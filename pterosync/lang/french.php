@@ -1,7 +1,7 @@
 <?php
 /**
  * WHMCS Language File
- * English (fr)
+ * French (fr)
  *
  * Please Note: These language files are overwritten during software updates
  * and therefore editing of these files directly is not advised. Instead we
@@ -42,5 +42,10 @@ $keys = [
     "SERVER_IP" => "IP du serveur",
     "SERVER_ID" => "ID du serveur",
     "FTP_DETAILS" => "Détails FTP",
-    "SERVER_IS_INSTALLING" => "Le serveur est en cours d'installation"
+    "SERVER_IS_INSTALLING" => "Le serveur est en cours d'installation",
+    "SERVER_SETTINGS" => "Paramètres du serveur",
+    "SERVER_STARTUP" => "Démarrage du serveur",
+    "SERVER_OVERVIEW" => "Aperçu du serveur",
+    "SERVER_SETTINGS_EDIT_NOT_ALLOWED" => "La modification des paramètres de configuration du serveur n'est pas autorisée pour ce produit.",
+    "SERVER_STARTUP_EDIT_NOT_ALLOWED" => "La modification des paramètres de démarrage du serveur n'est pas autorisée pour ce produit.",
 ];

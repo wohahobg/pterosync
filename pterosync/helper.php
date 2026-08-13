@@ -1,7 +1,10 @@
 <?php
 
-
 use Illuminate\Database\Capsule\Manager as Capsule;
+
+if (!defined("WHMCS")) {
+    die("This file cannot be accessed directly");
+}
 
 class PteroSyncInstance
 {
@@ -179,6 +182,14 @@ class PteroSyncInstance
     public function getPterodactylUser($params, array $client = [], $create = true)
     {
         $userResult = pteroSyncApplicationApi($params, 'users/external/' . $client['id']);
+
+        if ($userResult['status_code'] === 200 && isset($client['email'])
+            && strtolower($userResult['attributes']['email']) !== strtolower($client['email'])) {
+            // external_id collided with an unrelated account - ignore it, don't trust it blindly
+            pteroSyncLog('getPterodactylUser', 'Ignored external_id collision: Pterodactyl user ' . $userResult['attributes']['id'] . ' has external_id=' . $client['id'] . ' but a different email, so it is not being treated as the account for this WHMCS client.', ['client' => $client, 'pterodactylUser' => $userResult]);
+            $userResult['status_code'] = 404;
+        }
+
         if ($userResult['status_code'] === 404) {
             if (!isset($client['email'])) return $userResult;
 
@@ -454,28 +465,6 @@ function pteroSyncConvertToMB($input)
     return $input * 1024;
 }
 
-function pteroSyncGetNodeAllocations($params, $serverNode)
-{
-
-    $node = [];
-    $allocations = [];
-    $nodes = pteroSyncApplicationApi($params, 'nodes?include=allocations');
-    if ($nodes) {
-        foreach ($nodes['data'] as $nodeData) {
-            $node = $nodeData['attributes'];
-            if ($node['id'] == $serverNode) {
-                $allocations = $node['relationships']['allocations']['data'];
-                break;
-            }
-        }
-    }
-    if (!$allocations){
-        throw new Exception('Cannot find any ports for node with id '.$serverNode .' please ensure you have created ports for that node.');
-    }
-    PteroSyncInstance::get()->node_allocations = $allocations;
-    PteroSyncInstance::get()->node = $node;
-}
-
 function pteroSync_calculatePortRange($serverPortRange, $offset)
 {
     // Extract the start and end of the SERVER_PORT range
@@ -720,6 +709,27 @@ function pteroSyncfindPorts($ports, $ips)
         'server_ip_ports' => json_encode($ips[$_SERVER_IP] ?? [])
     ], 'Founding ports finish');
     return $foundPorts;
+}
+
+// finds the first node in the location with every required port free, or null if none do
+function pteroSyncResolvePorts($params, $location_id, $portsArray, $requiredPorts)
+{
+    $nodesResult = pteroSyncApplicationApi($params, 'nodes?include=allocations');
+    if ($nodesResult['status_code'] !== 200) return null;
+
+    foreach ($nodesResult['data'] as $nodeData) {
+        $node = $nodeData['attributes'];
+        if ($node['location_id'] != $location_id) continue;
+
+        PteroSyncInstance::get()->node_allocations = $node['relationships']['allocations']['data'];
+        $foundPorts = pteroSyncfindPorts($portsArray, pteroSyncMakeIParray());
+
+        if (count($foundPorts) >= count($requiredPorts) && isset($foundPorts['SERVER_PORT'])) {
+            return ['node' => $node, 'foundPorts' => $foundPorts];
+        }
+    }
+
+    return null;
 }
 
 function pteroSyncGetCustomFieldId($params)

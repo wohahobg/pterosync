@@ -1,7 +1,7 @@
 <?php
 /**
  * WHMCS Language File
- * English (en)
+ * Traditional Chinese (zh-tw)
  *
  * Please Note: These language files are overwritten during software updates
  * and therefore editing of these files directly is not advised. Instead we
@@ -41,5 +41,11 @@ $keys = [
     "SERVER_FTP_USERNAME" => "用戶名",
     "SERVER_IP" => "伺服器 IP",
     "SERVER_ID" => "伺服器 ID",
-    "FTP_DETAILS" => "FTP 詳細資訊"
+    "FTP_DETAILS" => "FTP 詳細資訊",
+    "SERVER_IS_INSTALLING" => "伺服器安裝中",
+    "SERVER_SETTINGS" => "伺服器設定",
+    "SERVER_STARTUP" => "伺服器啟動設定",
+    "SERVER_OVERVIEW" => "伺服器總覽",
+    "SERVER_SETTINGS_EDIT_NOT_ALLOWED" => "此產品不允許編輯伺服器設定。",
+    "SERVER_STARTUP_EDIT_NOT_ALLOWED" => "此產品不允許修改伺服器啟動設定。",
 ];

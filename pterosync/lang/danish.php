@@ -41,5 +41,11 @@ $keys = [
     "SERVER_FTP_USERNAME" => "Brugernavn",
     "SERVER_IP" => "Server IP",
     "SERVER_ID" => "Server ID",
-    "FTP_DETAILS" => "FTP Detaljer"
+    "FTP_DETAILS" => "FTP Detaljer",
+    "SERVER_IS_INSTALLING" => "Serveren installeres",
+    "SERVER_SETTINGS" => "Serverindstillinger",
+    "SERVER_STARTUP" => "Serveropstart",
+    "SERVER_OVERVIEW" => "Serveroversigt",
+    "SERVER_SETTINGS_EDIT_NOT_ALLOWED" => "Det er ikke tilladt at redigere serverens konfigurationsindstillinger for dette produkt.",
+    "SERVER_STARTUP_EDIT_NOT_ALLOWED" => "Det er ikke tilladt at ændre serverens opstartsindstillinger for dette produkt.",
 ];

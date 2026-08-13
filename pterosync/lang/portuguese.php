@@ -41,5 +41,11 @@
     "SERVER_FTP_USERNAME" => "Nome de usuário",
     "SERVER_IP" => "IP do Servidor",
     "SERVER_ID" => "ID do Servidor",
-    "FTP_DETAILS" => "Detalhes do FTP"
+    "FTP_DETAILS" => "Detalhes do FTP",
+    "SERVER_IS_INSTALLING" => "O servidor está instalando",
+    "SERVER_SETTINGS" => "Configurações do Servidor",
+    "SERVER_STARTUP" => "Inicialização do Servidor",
+    "SERVER_OVERVIEW" => "Visão Geral do Servidor",
+    "SERVER_SETTINGS_EDIT_NOT_ALLOWED" => "A edição das configurações do servidor não é permitida para este produto.",
+    "SERVER_STARTUP_EDIT_NOT_ALLOWED" => "A modificação das configurações de inicialização do servidor não é permitida para este produto.",
 ];
