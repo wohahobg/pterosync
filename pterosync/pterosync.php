@@ -541,6 +541,34 @@ function pterosync_CreateAccount(array $params)
 
         $threads = pterosync_validateThreads(pteroSyncGetOption($params, 'threads'));
 
+        // resolve exact port allocations up front instead of auto-deploying and reconciling after
+        $resolvedPorts = null;
+        if ($portsArray && isset($portsArray['SERVER_PORT'])) {
+            pteroSyncProcessAllocations($eggData, $portsArray);
+            $requiredPorts = PteroSyncInstance::get()->variables;
+            if ($requiredPorts) {
+                $resolvedPorts = pteroSyncResolvePorts($params, $location_id, $portsArray, $requiredPorts);
+                if (!$resolvedPorts) {
+                    throw new Exception('Not all required ports are currently available in the configured port ranges. Please adjust the port ranges or try again later.');
+                }
+
+                foreach ($resolvedPorts['foundPorts'] as $key => $var) {
+                    if ($key === 'SERVER_PORT') continue;
+                    $environment[$key] = "" . $var['port'] . "";
+                    $maximumAllocations++;
+                }
+                if (PteroSyncInstance::get()->getDynamicEnvironmentArray()) {
+                    foreach (PteroSyncInstance::get()->getDynamicEnvironmentArray() as $environmentName => $variableName) {
+                        if (isset($environment[$variableName])) {
+                            $environment[$environmentName] = $environment[$variableName];
+                        }
+                    }
+                }
+                // SERVER_PORT is allocation-driven, not a literal container env var.
+                unset($environment['SERVER_PORT']);
+            }
+        }
+
         $serverData = [
             'name' => $name,
             'user' => (int)$userId,
@@ -562,15 +590,28 @@ function pterosync_CreateAccount(array $params)
                 'allocations' => (int)$maximumAllocations,
                 'backups' => (int)$backups,
             ],
-            'deploy' => [
-                'locations' => [(int)$location_id],
-                'dedicated_ip' => $dedicated_ip,
-                'port_range' => $port_range,
-            ],
             'environment' => $environment,
             'start_on_completion' => true,
             'external_id' => (string)$params['serviceid'],
         ];
+
+        if ($resolvedPorts) {
+            $additionalAllocationIds = [];
+            foreach ($resolvedPorts['foundPorts'] as $key => $var) {
+                if ($key !== 'SERVER_PORT') $additionalAllocationIds[] = $var['id'];
+            }
+            $serverData['allocation'] = [
+                'default' => $resolvedPorts['foundPorts']['SERVER_PORT']['id'],
+                'additional' => $additionalAllocationIds,
+            ];
+        } else {
+            // no port ranges configured - fall back to Pterodactyl's own auto-deploy
+            $serverData['deploy'] = [
+                'locations' => [(int)$location_id],
+                'dedicated_ip' => $dedicated_ip,
+                'port_range' => $port_range,
+            ];
+        }
 
         $feature_limits = pteroSyncGetOption($params, 'feature_limits');
         $feature_limits = json_decode($feature_limits, true);
@@ -594,100 +635,6 @@ function pterosync_CreateAccount(array $params)
         $serverAllocations = $server['attributes']['relationships']['allocations']['data'];
         $allocation = $server['attributes']['allocation'];
         pteroSync_getServerIPAndPort($serverAllocations, $allocation);
-
-        $serverNode = $server['attributes']['node'];
-        $foundPorts = [];
-
-        if ($portsArray) {
-            pteroSyncGetNodeAllocations($params, $serverNode);
-            pteroSyncProcessAllocations($eggData, $portsArray);
-        }
-
-        if (!PteroSyncInstance::get()->variables) {
-            pteroSyncLog('VARIABLES', 'No variables founds.', $portsArray);
-        }
-
-        if (!PteroSyncInstance::get()->node_allocations) {
-            pteroSyncLog('NODE ALLOCATIONS', 'Node allocations not found.', [$serverNode]);
-        }
-
-        if (PteroSyncInstance::get()->variables && PteroSyncInstance::get()->node_allocations) {
-            $ips = pteroSyncMakeIParray();
-            $foundPorts = pteroSyncfindPorts($portsArray, $ips);
-        }
-
-        if (!$foundPorts && PteroSyncInstance::get()->variables && PteroSyncInstance::get()->node_allocations) {
-            pteroSyncLog('Ports not founds', 'Ports not founds.', [
-                'results' => PteroSyncInstance::get()->fetchedResults,
-                'variables' => PteroSyncInstance::get()->variables
-            ]);
-        }
-
-        if ($foundPorts) {
-            pteroSyncLog('Found ports', 'Found ports.', $foundPorts);
-            $_SERVER_PORT_ID = $serverAllocations[0]['attributes']['id'];
-
-            $allocationArray['allocation'] = $_SERVER_PORT_ID;
-            if (isset($foundPorts['SERVER_PORT'])) {
-                $allocationArray['allocation'] = $foundPorts['SERVER_PORT']['id'];
-                $allocationArray['remove_allocations'] = [$_SERVER_PORT_ID];
-            }
-
-            $environment = [];
-            $additional = [];
-            foreach ($foundPorts as $key => $var) {
-                $environment[$key] = "" . $var['port'] . "";
-                $additional[] = $var['id'];
-                $maximumAllocations++;
-            }
-
-            if (PteroSyncInstance::get()->getDynamicEnvironmentArray()) {
-                PteroSyncInstance::get()->addFileLog(PteroSyncInstance::get()->getDynamicEnvironmentArray(), 'Setting Dynamic Environment');
-                foreach (PteroSyncInstance::get()->getDynamicEnvironmentArray() as $environmentName => $variableName) {
-                    if (isset($environment[$variableName])) {
-                        $environment[$environmentName] = $environment[$variableName];
-                    }
-                }
-            }
-            if (isset($environment['SERVER_PORT'])) {
-                unset($environment['SERVER_PORT']);
-            }
-            $allocationArray['add_allocations'] = $additional;
-
-            $newServerArray = array_merge([
-                'memory' => (int)$memory,
-                'swap' => (int)$swap,
-                'io' => (int)$io,
-                'cpu' => (int)$cpu,
-                'disk' => (int)$disk,
-                'oom_disabled' => $oom_disabled,
-                'feature_limits' => [
-                    'databases' => (int)$databases,
-                    'allocations' => (int)$maximumAllocations,
-                    'backups' => (int)$backups,
-                ],
-            ], $allocationArray);
-
-            if ($feature_limits) {
-                $newServerArray['feature_limits'] = array_merge($serverData['feature_limits'], $feature_limits);
-            }
-            $updateResult = pteroSyncApplicationApi($params, 'servers/' . $serverId . '/build?include=allocations', $newServerArray, 'PATCH');
-
-            if ($updateResult['status_code'] !== 200) throw new Exception('Failed to update build of the server, received error code: ' . $updateResult['status_code'] . '. Enable module debug log for more info.');
-
-
-            $allocation = $updateResult['attributes']['allocation'];
-            $serverAllocations = $updateResult['attributes']['relationships']['allocations']['data'];
-            pteroSync_getServerIPAndPort($serverAllocations, $allocation);
-            pteroSyncApplicationApi($params, 'servers/' . $serverId . '/startup', [
-                'startup' => $server['attributes']['container']['environment']['STARTUP'],
-                'egg' => $server['attributes']['egg'],
-                'image' => $server['attributes']['container']['image'],
-                'environment' => array_merge($serverData['environment'], $environment),
-                'skip_scripts' => false,
-            ], 'PATCH');
-
-        }
 
         unset($params['password']);
         pteroSync_updateServerDomain($params);
@@ -1066,7 +1013,10 @@ function pterosync_ClientArea(array $params)
             }
         }
 
-        $actionUrl = "https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        // strip chars that could break out of the inline JS these get reflected into in overview.tpl
+        $safeHost = preg_replace('/[^a-zA-Z0-9.\-:]/', '', $_SERVER['HTTP_HOST'] ?? '');
+        $safeRequestUri = str_replace(["'", '"', '<', '>', '\\'], '', $_SERVER['REQUEST_URI'] ?? '');
+        $actionUrl = "https://$safeHost$safeRequestUri";
         $vars = [
             'moduleDir' => __DIR__,
             'serviceId' => $params['serviceid'],

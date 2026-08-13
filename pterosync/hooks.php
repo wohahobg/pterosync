@@ -28,13 +28,26 @@ add_hook('ClientAreaProductDetails', 1, function ($params) {
     return $params;
 });
 
+function pteroSyncIsAdminModulePage($params): bool
+{
+    // only the product module-config page or a client service-details page need our assets
+    $filename = $params['filename'] ?? basename($_SERVER['SCRIPT_NAME'], '.php');
+
+    if ($filename === 'configproducts' && ($_REQUEST['module'] ?? '') === 'pterosync') {
+        return true;
+    }
+
+    return $filename === 'clientsservices' && isset($_REQUEST['id']);
+}
+
 add_hook('AdminAreaHeadOutput', 1, function ($params) {
+    if (!pteroSyncIsAdminModulePage($params)) return '';
     $url = PteroSyncInstance::get()->cssPath;
     return '<link rel="stylesheet" href="' . $url . '">' . PHP_EOL;
 });
 
 add_hook('AdminAreaFooterOutput', 1, function ($params) {
-
+    if (!pteroSyncIsAdminModulePage($params)) return '';
     $url = PteroSyncInstance::get()->jsPath;
     $urls = '<script src="' . $url . '"></script>' . PHP_EOL;
     $urls .= '<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>';
@@ -125,7 +138,7 @@ add_hook('PreDeleteClient', 1, function ($vars) {
         'id' => $clientId
     ], false);
 
-    if ($userResult !== 404) {
+    if ($userResult['status_code'] !== 404) {
         //pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], [], 'DELETE');
     }
 });
@@ -138,7 +151,7 @@ add_hook('ClientClose', 1, function ($vars) {
         'id' => $clientId
     ], false);
 
-    if ($userResult !== 404) {
+    if ($userResult['status_code'] !== 404) {
         //   pteroSyncApplicationApi($params, 'users/' . $userResult['attributes']['id'], [], 'DELETE');
     }
 });
